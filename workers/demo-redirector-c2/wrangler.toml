@@ -1,0 +1,8 @@
+name = "demo-redirector-c2"
+main = "src/index.js"
+compatibility_date = "2023-11-21"
+account_id = "<your_account_id>"
+
+routes = [
+	{ pattern = "worker.demo.com", custom_domain = true, zone_id = "<your_zone_id>" }
+]

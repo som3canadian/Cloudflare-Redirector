@@ -22,6 +22,8 @@ Note: The idea or "workflow" can be scaled and can also integrate more feature (
 - Custom header value: `Awesome-Header`
 - see the file `demo-profile.yaotl` for the profile used in this demo.
 
+Note: this a simple demo, you should not use the same domain between worker and ZT.
+
 ### Secrets to setup
 
 - SERVICE_CF_ID (Cloudflare Service Auth ID to authenticate to Cloudflare Zero Trust) - see screenshot `3.jpg` in assets folder.
