@@ -1,0 +1,115 @@
+{
+    "implant_config": {
+        "user_agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36",
+        "chrome_base_version": 100,
+        "macos_version": "10_15_7",
+        "url_parameters": null,
+        "headers": [
+	        {
+		        "name": "X-Header",
+		        "value": "Awesome-Header"
+	        }
+        ],
+        "max_files": 8,
+        "min_files": 2,
+        "max_paths": 8,
+        "min_paths": 2,
+        "stager_file_ext": ".woff",
+        "stager_files": [
+            "attribute_text_w01_regular",
+            "ZillaSlab-Regular.subset.bbc33fb47cf6",
+            "ZillaSlab-Bold.subset.e96c15f68c68",
+            "Inter-Regular",
+            "Inter-Medium"
+        ],
+        "stager_paths": [
+            "static",
+            "assets",
+            "fonts",
+            "locales"
+        ],
+        "poll_file_ext": ".js",
+        "poll_files": [
+            "bootstrap",
+            "bootstrap.min",
+            "jquery.min",
+            "jquery",
+            "route",
+            "app",
+            "app.min",
+            "array",
+            "backbone",
+            "script",
+            "email"
+        ],
+        "poll_paths": [
+            "js",
+            "umd",
+            "assets",
+            "bundle",
+            "bundles",
+            "scripts",
+            "script",
+            "javascripts",
+            "javascript",
+            "jscript"
+        ],
+        "start_session_file_ext": ".html",
+        "session_file_ext": ".php",
+        "session_files": [
+            "login",
+            "signin",
+            "api",
+            "samples",
+            "rpc",
+            "index",
+            "admin",
+            "register",
+            "sign-up"
+        ],
+        "session_paths": [
+            "php",
+            "api",
+            "upload",
+            "actions",
+            "rest",
+            "v1",
+            "auth",
+            "authenticate",
+            "oauth",
+            "oauth2",
+            "oauth2callback",
+            "database",
+            "db",
+            "namespaces"
+        ],
+        "close_file_ext": ".png",
+        "close_files": [
+            "favicon",
+            "sample",
+            "example"
+        ],
+        "close_paths": [
+            "static",
+            "www",
+            "assets",
+            "images",
+            "icons",
+            "image",
+            "icon",
+            "png"
+        ]
+    },
+    "server_config": {
+        "random_version_headers": false,
+        "headers": [],
+        "cookies": [
+            "PHPSESSID",
+            "SID",
+            "SSID",
+            "APISID",
+            "csrf-state",
+            "AWSALBCORS"
+        ]
+    }
+}
