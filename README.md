@@ -54,8 +54,11 @@ cd workers/demo-redirector-c2
 # when using "wrangler secret put <KEY>", you will be prompt to enter the secret value
 wrangler secret put SERVICE_CF_ID
 wrangler secret put SERVICE_CF_SECRET
+# wrangler secret put Awesome-Header
 wrangler secret put CUSTOM_HEADER
+# url format: https://worker.demo.com/
 wrangler secret put WORKER_ENDPOINT
+# url format: https://listener.demo.com/
 wrangler secret put LISTEN_ENDPOINT
 #
 # modify src/index.js [optional]
