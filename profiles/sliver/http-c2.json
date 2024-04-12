@@ -7,8 +7,12 @@
         "headers": [
 	        {
 		        "name": "X-Header",
-		        "value": "Awesome-Header"
-	        }
+		        "value": "secret_value"
+	        },
+            {
+                "name": "X-ID",
+                "value": "3"
+            }
         ],
         "max_files": 8,
         "min_files": 2,

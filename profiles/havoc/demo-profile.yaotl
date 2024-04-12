@@ -21,7 +21,8 @@ Listeners {
     Http {
         Name         = "Agent Listener - HTTP/s"
         Hosts        = [
-            "worker.demo.com", # worker url
+            "cf-redirector-worker1.workers.dev", # worker1 url
+            "cf-redirector-worker2.workers.dev, # worker2 url
         ]
         HostBind     = "127.0.0.1" # the address where the listener should bind to.
         HostRotation = "round-robin"
@@ -40,7 +41,8 @@ Listeners {
 
         Headers = [
             "Content-type: text/plain",
-            "X-Header: Awesome-Header", # custom header
+            "X-Header: secret_value",
+            "X-ID: 1",
         ]
 
         Response {

@@ -1,0 +1,39 @@
+{
+  "cf_account_id": "<account_id>",
+  "cf_account_dev_subdomain": "<subdomain>.workers.dev",
+  "use_dev_subdomain": "true",
+  "router_env_name": [
+    "worker1",
+    "worker2"
+  ],
+  "secrets": {
+    "service_cf_id": "<service_cf_id>",
+    "service_cf_secret": "<service_cf_secret>",
+    "jwt_secret": "your_secret_key",
+    "router_header": "X-Header",
+    "router_header_secret": "secret_value",
+    "auth_header": "X-Header-Gate",
+    "auth_header_secret": "secret_value_auth_gate",
+    "id_header": "X-ID"
+  },
+  "listeners": [
+    {
+      "id": 1,
+      "name": "havoc",
+      "address": "https://havoc-listener.example.com/",
+      "is_default": "false"
+    },
+    {
+      "id": 2,
+      "name": "mythic",
+      "address": "https://mythic-listener.example.com/",
+      "is_default": "false"
+    },
+    {
+      "id": 3,
+      "name": "sliver",
+      "address": "https://sliver-listener.example.com/",
+      "is_default": "true"
+    }
+  ]
+}

