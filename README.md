@@ -160,7 +160,9 @@ This configuration will create 4 URLs (Hosts for your C2 profile):
 
 ## Not sure about the Zero Trust part ?
 
-Follow the screenshots in assets folder, but in summary:
+First time setting up a cloudflare tunnel? Take a look at this [article](https://www.redteaming.org/cftunnels.html) provide by [Cyb3rC3lt](https://twitter.com/Cyb3rC3lt).
+
+I also took some screenshots that are in the assets folder, but in summary:
 
 1. Access zero trust section
 
@@ -168,7 +170,7 @@ Follow the screenshots in assets folder, but in summary:
 
 3. Create new tunnel (and setting up on your C2 server)
 
-4. Create application (self-hosted) rules to protect your listener (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
+4. **Create application (self-hosted) rules to protect your listener** (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
 
 ## After deployment
 
@@ -189,5 +191,6 @@ generate --http <worker.demo.com> --skip-symbols --disable-sgn --format shellcod
 ## Credits
 
 - [Alfie Champion](https://twitter.com/ajpc500) for the inspiration and article.
-- [C5pider](https://twitter.com/C5pider) for Havoc.
+- [Toby Schneider](https://github.com/tsndr) for [cloudflare-worker-jwt](https://github.com/tsndr/cloudflare-worker-jwt).
+- [Cyb3rC3lt](https://twitter.com/Cyb3rC3lt) for the [article](https://www.redteaming.org/cftunnels.html) on Cloudflare tunnel.
 - [Yack](https://yack.one).
