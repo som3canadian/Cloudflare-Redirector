@@ -148,6 +148,7 @@ If you want to use custom domain, here is an example:
       "pattern": "worker3.example.com"
     }
   ],
+...
 ```
 
 This configuration will create 4 URLs (Hosts for your C2 profile):

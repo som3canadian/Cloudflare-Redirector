@@ -152,7 +152,6 @@ function loopRoute() {
 }
 
 function deployWorkers() {
-  checkFirstDeployment
   echo ""
   echo "Deploying workers"
   cd "$workers_folder/cf-redirector-auth" || exit
@@ -214,7 +213,6 @@ function loopListeners() {
 }
 
 function deleteAllWorkers() {
-  checkFirstDeployment
   echo ""
   echo "Deleting workers"
   cd "$workers_folder/cf-redirector-router" || exit
@@ -293,6 +291,7 @@ function parseArgs() {
     key="$1"
     case $key in
     -d | --deploy)
+      checkFirstDeployment
       deployWorkers
       shift
       ;;
@@ -305,7 +304,15 @@ function parseArgs() {
       shift
       ;;
     -r | --remove)
+      checkFirstDeployment
       deleteAllWorkers
+      shift
+      ;;
+    -l | --listeners)
+      checkFirstDeployment
+      loopListeners
+      deployWorkers
+      outputRouterHosts
       shift
       ;;
     -h | --help)
@@ -314,8 +321,9 @@ function parseArgs() {
       echo "  -h, --help           Display this help message"
       echo "  -d, --deploy         Only deploy workers. If 1st deployment, use -f first"
       echo "  -f, --first          First deployment. After this, you should use -d for deploying"
+      echo "  -l, --listeners      Update listeners (When changing config). To be use after first deployment."
       echo "  -r, --remove         Remove/Delete all workers. Delete all workers and reset files we changed"
-      echo "  -s, --secrets        Create/update all secrets (useful when change config file). Tu be used after first deployment."
+      echo "  -s, --secrets        Create/update all secrets (useful when change config file). To be use after first deployment."
       exit 0
       ;;
     *)
