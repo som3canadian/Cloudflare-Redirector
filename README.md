@@ -138,7 +138,7 @@ If you want to use custom domain, here is an example:
       "name": "worker2",
       "use_custom_domain": "true",
       "use_dev_subdomain": "true",
-      "pattern": "worker2.mycustomdomain.com"
+      "pattern": "worker2.anothercustomdomain.com"
     },
     {
       "id": 3,
@@ -154,9 +154,11 @@ If you want to use custom domain, here is an example:
 This configuration will create 4 URLs (Hosts for your C2 profile):
 
 - `worker1.mycustomdomain.com`
-- `worker2.mycustomdomain.com`
+- `worker2.anothercustomdomain.com`
 - `worker2.<subdomain>.workers.dev`
 - `worker3.<subdomain>.workers.dev`
+
+note: domain(s) must be in the same Cloudflare account.
 
 ## Not sure about the Zero Trust part ?
 
