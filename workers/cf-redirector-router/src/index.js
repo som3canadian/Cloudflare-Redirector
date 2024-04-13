@@ -4,21 +4,21 @@ addEventListener('fetch', event => {
   event.respondWith(handleAppRequest(event));
 });
 
-async function handleAppRequest(event, env) {
+async function handleAppRequest(event) {
   const request = event.request
   const psk = request.headers.get(ROUTER_HEADER_KEY);
   if (! psk) {
     return unauthorizedResponse();
   }
-  const timing_result = timingSafeCheck(psk, ROUTER_HEADER_SECRET);
+  const timing_result = timingSafeCheck(psk);
   if (! timing_result) {
     return unauthorizedResponse();
   }
+  const authModifiedHeaders = new Headers(request.headers);
+  authModifiedHeaders.set(AUTH_HEADER_KEY, AUTH_HEADER_SECRET);
   const authResponse = await AUTH_WORKER.fetch(request.url, {
     method: 'GET',
-    headers: {
-      AUTH_HEADER_KEY: AUTH_HEADER_SECRET
-    }
+    headers: authModifiedHeaders
   });
   const {token} = await authResponse.json();
   // console.log(token);
@@ -27,7 +27,7 @@ async function handleAppRequest(event, env) {
 }
 
 // https://developers.cloudflare.com/workers/examples/protect-against-timing-attacks
-function timingSafeCheck(psk, ROUTER_HEADER_SECRET) {
+function timingSafeCheck(psk) {
   const a = encoder.encode(psk);
   const b = encoder.encode(ROUTER_HEADER_SECRET);
   if (a.byteLength !== b.byteLength) { // compare the two strings byte length.
@@ -45,6 +45,7 @@ async function redirectorRequest(request, token) {
   const modifiedHeaders = new Headers(request.headers);
   modifiedHeaders.delete(ROUTER_HEADER_KEY);
   modifiedHeaders.set("Authorization", `Bearer ${token}`)
+  // console.log(token);
   return await REDIRECTOR_WORKER.fetch(request.url, {
     body: request.body,
     method: request.method,

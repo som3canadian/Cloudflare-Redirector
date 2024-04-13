@@ -5,12 +5,12 @@ addEventListener('fetch', event => {
   event.respondWith(handleAuthRequest(event.request));
 });
 
-async function handleAuthRequest(request, env) {
+async function handleAuthRequest(request) {
   const headerValue = request.headers.get(AUTH_HEADER_KEY);
   if (! headerValue) {
     return unauthorizedResponse();
   }
-  const timing_result = timingSafeCheck(headerValue, AUTH_HEADER_SECRET);
+  const timing_result = timingSafeCheck(headerValue);
   if (! timing_result) {
     return unauthorizedResponse();
   }
@@ -21,7 +21,7 @@ async function handleAuthRequest(request, env) {
 }
 
 // https://developers.cloudflare.com/workers/examples/protect-against-timing-attacks
-function timingSafeCheck(headerValue, AUTH_HEADER_SECRET) {
+function timingSafeCheck(headerValue) {
   const a = encoder.encode(headerValue);
   const b = encoder.encode(AUTH_HEADER_SECRET);
   if (a.byteLength !== b.byteLength) { // compare byte length of the two strings.
