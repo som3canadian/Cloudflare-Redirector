@@ -138,6 +138,7 @@ function loopEnv() {
 }
 
 function deployWorkers() {
+  checkFirstDeployment
   echo ""
   echo "Deploying workers"
   cd "$workers_folder/cf-redirector-auth" || exit
@@ -199,6 +200,7 @@ function loopListeners() {
 }
 
 function deleteAllWorkers() {
+  checkFirstDeployment
   echo ""
   echo "Deleting workers"
   cd "$workers_folder/cf-redirector-router" || exit
@@ -221,7 +223,8 @@ function deleteAllWorkers() {
   git checkout -- "$workers_folder/cf-redirector-auth/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
-  rm routerurls.txt
+  rm "$this_path/routerurls.txt"
+  rm "$this_path/.first_deployment.txt"
 }
 
 function outputRouterHosts() {
@@ -232,7 +235,18 @@ function outputRouterHosts() {
   echo ""
 }
 
+function checkFirstDeployment() {
+  if [[ ! -f "$this_path/.first_deployment.txt" ]]; then
+    echo ""
+    echo "[-] First deployment not done"
+    echo "You should use -f for first deployment"
+    echo "Use -h for help. Exiting..."
+    exit 1
+  fi
+}
+
 function doAllSecrets() {
+  checkFirstDeployment
   # printInfo
   secretsAuthWorker
   secretsRedirectorWorker
@@ -243,6 +257,14 @@ function doAllSecrets() {
 }
 
 function firstDeployment() {
+  if [[ -f "$this_path/.first_deployment.txt" ]]; then
+    echo ""
+    echo "[-] First deployment already done"
+    echo "You should use -d for deploying or -s for updating secrets"
+    echo "Use -h for help. Exiting..."
+    exit 1
+  fi
+  echo "tracking first deployment" > "$this_path/.first_deployment.txt"
   # printInfo
   installDependencies
   addBasicConfig
