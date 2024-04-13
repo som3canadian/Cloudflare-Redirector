@@ -11,7 +11,7 @@ redirector_worker="REDIRECTOR_WORKER"
 
 account_dev_subdomain=$(jq -r '.cf_account_dev_subdomain' "$config_file")
 account_id=$(jq -r '.cf_account_id' "$config_file")
-router_count=$(jq '.router_env_name | length' "$config_file")
+router_route_count=$(jq '.router_route | length' "$config_file")
 listener_count=$(jq '.listeners | length' "$config_file")
 secret_service_cf_id=$(jq -r '.secrets.service_cf_id' "$config_file")
 secret_service_cf_secret=$(jq -r '.secrets.service_cf_secret' "$config_file")
@@ -22,11 +22,15 @@ secret_auth_header=$(jq -r '.secrets.auth_header' "$config_file")
 secret_auth_header_secret=$(jq -r '.secrets.auth_header_secret' "$config_file")
 secret_id_header=$(jq -r '.secrets.id_header' "$config_file")
 
+# config changes that will require reseting one the four files
+# listeners - "$workers_folder/cf-redirector-worker/src/index.js"
+# router_route - the 3 wrangler.toml files
+
 function printInfo() {
   echo ""
   echo "account_id: $account_id"
   echo "account_dev_subdomain: $account_dev_subdomain"
-  echo "router_count: $router_count"
+  echo "router_route_count: $router_route_count"
   echo "listener_count: $listener_count"
   echo "secret_service_cf_id: $secret_service_cf_id"
   echo "secret_service_cf_secret: $secret_service_cf_secret"
@@ -62,10 +66,7 @@ function addBasicConfig() {
   echo "workers_dev = false" >> "$workers_folder/cf-redirector-auth/wrangler.toml"
   echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-worker/wrangler.toml"
   echo "workers_dev = false" >> "$workers_folder/cf-redirector-worker/wrangler.toml"
-  {
-    echo "account_id = \"$account_id\""
-    echo "workers_dev = true"
-  } >> "$workers_folder/cf-redirector-router/wrangler.toml"
+  echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-router/wrangler.toml"
 }
 
 function secretsAuthWorker() {
@@ -98,40 +99,53 @@ function secretsRouterWorker() {
   echo "Creating secrets for cf-redirector-router"
   cd "$workers_folder/cf-redirector-router" || exit
   COUNT=0
-  while [[ $COUNT -lt $router_count ]]; do
-    temp_router_env_name=$(jq -r ".router_env_name[$COUNT]" "$config_file")
-    this_router_env_name="[env.$temp_router_env_name]"
-    echo "$secret_auth_header" | wrangler secret put AUTH_HEADER_KEY --env "$temp_router_env_name"
-    echo "$secret_auth_header_secret" | wrangler secret put AUTH_HEADER_SECRET --env "$temp_router_env_name"
-    echo "$secret_router_header" | wrangler secret put ROUTER_HEADER_KEY --env "$temp_router_env_name"
-    echo "$secret_router_header_secret" | wrangler secret put ROUTER_HEADER_SECRET --env "$temp_router_env_name"
+  while [[ $COUNT -lt $router_route_count ]]; do
+    temp_router_route_name=$(jq -r ".router_route[$COUNT].name" "$config_file")
+    echo "$secret_auth_header" | wrangler secret put AUTH_HEADER_KEY --env "$temp_router_route_name"
+    echo "$secret_auth_header_secret" | wrangler secret put AUTH_HEADER_SECRET --env "$temp_router_route_name"
+    echo "$secret_router_header" | wrangler secret put ROUTER_HEADER_KEY --env "$temp_router_route_name"
+    echo "$secret_router_header_secret" | wrangler secret put ROUTER_HEADER_SECRET --env "$temp_router_route_name"
     COUNT=$((COUNT + 1))
   done
   cd "$this_path" || exit
 }
 
-function loopEnv() {
+function loopRoute() {
   echo ""
-  echo "Looping through env"
+  echo "Looping Router routes"
   COUNT=0
   if [[ -f routerurls.txt ]]; then
     rm routerurls.txt
   fi
   touch routerurls.txt
-  while [[ $COUNT -lt $router_count ]]; do
-    temp_router_env_name=$(jq -r ".router_env_name[$COUNT]" "$config_file")
-    # echo ""
-    # echo "Doing $temp_router_env_name"
-    echo "cf-redirector-$temp_router_env_name.$account_dev_subdomain" >> routerurls.txt
+  while [[ $COUNT -lt $router_route_count ]]; do
+    router_use_dev_subdomain=$(jq -r ".router_route[$COUNT].use_dev_subdomain" "$config_file")
+    router_route_use_custom_domain=$(jq -r ".router_route[$COUNT].use_custom_domain" "$config_file")
+    temp_router_route_name=$(jq -r ".router_route[$COUNT].name" "$config_file")
+    router_route_pattern=$(jq -r ".router_route[$COUNT].pattern" "$config_file")
     #
-    this_router_env_name="[env.$temp_router_env_name]"
-    this_router_name="name = \"cf-redirector-$temp_router_env_name\""
+    this_router_route_env="[env.$temp_router_route_name]"
+    this_router_name="name = \"cf-redirector-$temp_router_route_name\""
     {
       echo ""
-      echo "$this_router_env_name"
+      echo "$this_router_route_env"
       echo "$this_router_name"
       echo "services = [{ binding = \"$redirector_auth\", service = \"$cf_redirector_auth\" },{ binding = \"$redirector_worker\", service = \"$cf_redirector_worker\" }]"
     } >> "$workers_folder/cf-redirector-router/wrangler.toml"
+    # check if custom domain
+    if [[ $router_route_use_custom_domain == "true" ]]; then
+      worker_domain="$router_route_pattern"
+      echo "routes = [{ pattern = \"$worker_domain\", custom_domain = $router_route_use_custom_domain }]" >> "$workers_folder/cf-redirector-router/wrangler.toml"
+      echo "$worker_domain" >> routerurls.txt
+    fi
+    if [[ $router_use_dev_subdomain == "true" ]]; then
+      worker_domain="cf-redirector-$temp_router_route_name.$account_dev_subdomain"
+      echo "workers_dev = true" >> "$workers_folder/cf-redirector-router/wrangler.toml"
+      echo "$worker_domain" >> routerurls.txt
+    fi
+    if [[ $router_use_dev_subdomain == "false" ]]; then
+      echo "workers_dev = false" >> "$workers_folder/cf-redirector-router/wrangler.toml"
+    fi
     #
     COUNT=$((COUNT + 1))
   done
@@ -150,9 +164,9 @@ function deployWorkers() {
   cd "$workers_folder/cf-redirector-router" || exit
   #
   COUNT=0
-  while [[ $COUNT -lt $router_count ]]; do
-    temp_router_env_name=$(jq -r ".router_env_name[$COUNT]" "$config_file")
-    wrangler deploy --env "$temp_router_env_name"
+  while [[ $COUNT -lt $router_route_count ]]; do
+    temp_router_route_name=$(jq -r ".router_route[$COUNT].name" "$config_file")
+    wrangler deploy --env "$temp_router_route_name"
     sleep 1
     COUNT=$((COUNT + 1))
   done
@@ -206,9 +220,9 @@ function deleteAllWorkers() {
   cd "$workers_folder/cf-redirector-router" || exit
   #
   COUNT=0
-  while [[ $COUNT -lt $router_count ]]; do
-    temp_router_env_name=$(jq -r ".router_env_name[$COUNT]" "$config_file")
-    wrangler delete --env "$temp_router_env_name" --force
+  while [[ $COUNT -lt $router_route_count ]]; do
+    temp_router_route_name=$(jq -r ".router_route[$COUNT].name" "$config_file")
+    wrangler delete --env "$temp_router_route_name" --force
     COUNT=$((COUNT + 1))
   done
   cd "$this_path" || exit
@@ -230,7 +244,7 @@ function deleteAllWorkers() {
 function outputRouterHosts() {
   echo ""
   echo ""
-  echo "[*] Your router hosts are (for C2 profile(s)):"
+  echo "[*] Your URLs(Hosts) for your C2 profiles:"
   cat routerurls.txt
   echo ""
 }
@@ -268,7 +282,7 @@ function firstDeployment() {
   # printInfo
   installDependencies
   addBasicConfig
-  loopEnv
+  loopRoute
   deployWorkers
   doAllSecrets
 }

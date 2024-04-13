@@ -21,7 +21,8 @@ note: Redirector worker and Auth worker does not have any public URL (only acces
 
 Todo:
 
-- add custom domain routing.
+- ~~add custom domain routing.~~
+- ? (suggestions are welcome)
 
 ## Things you will need
 
@@ -60,11 +61,6 @@ Config file example:
 {
   "cf_account_id": "<account_id>",
   "cf_account_dev_subdomain": "<subdomain>.workers.dev",
-  "use_dev_subdomain": "true",
-  "router_env_name": [
-    "worker1",
-    "worker2"
-  ],
   "secrets": {
     "service_cf_id": "<service_cf_id>",
     "service_cf_secret": "<service_cf_secret>",
@@ -75,12 +71,35 @@ Config file example:
     "auth_header_secret": "secret_value_auth_gate",
     "id_header": "X-ID"
   },
+  "router_route": [
+    {
+      "id": 1,
+      "name": "worker1",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker1.example.com"
+    },
+    {
+      "id": 2,
+      "name": "worker2",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker2.example.com"
+    },
+    {
+      "id": 3,
+      "name": "worker3",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker3.example.com"
+    }
+  ],
   "listeners": [
     {
       "id": 1,
       "name": "havoc",
       "address": "https://havoc-listener.example.com/",
-      "is_default": "true"
+      "is_default": "false"
     },
     {
       "id": 2,
@@ -92,11 +111,51 @@ Config file example:
       "id": 3,
       "name": "sliver",
       "address": "https://sliver-listener.example.com/",
-      "is_default": "false"
+      "is_default": "true"
     }
   ]
 }
 ```
+
+### Custom Domains
+
+Using custom domain is optional (`router_route` default configuration doesnt need to be change). You can use the default `workers.dev` subdomain, which is set by the `cf_account_dev_subdomain` key in the config file. Just make sure to set `use_dev_subdomain` to true. So yes, if you set `use_dev_subdomain` to true, you don't need to do care about the `pattern` config.
+
+If you want to use custom domain, here is an example:
+
+```json
+...
+  "router_route": [
+    {
+      "id": 1,
+      "name": "worker1",
+      "use_custom_domain": "true",
+      "use_dev_subdomain": "false",
+      "pattern": "worker1.mycustomdomain.com"
+    },
+    {
+      "id": 2,
+      "name": "worker2",
+      "use_custom_domain": "true",
+      "use_dev_subdomain": "true",
+      "pattern": "worker2.mycustomdomain.com"
+    },
+    {
+      "id": 3,
+      "name": "worker3",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker3.example.com"
+    }
+  ],
+```
+
+This configuration will create 4 URLs (Hosts for your C2 profile):
+
+- `worker1.mycustomdomain.com`
+- `worker2.mycustomdomain.com`
+- `worker2.<subdomain>.workers.dev`
+- `worker3.<subdomain>.workers.dev`
 
 ## Not sure about the Zero Trust part ?
 

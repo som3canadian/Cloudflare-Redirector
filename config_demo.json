@@ -1,11 +1,6 @@
 {
   "cf_account_id": "<account_id>",
   "cf_account_dev_subdomain": "<subdomain>.workers.dev",
-  "use_dev_subdomain": "true",
-  "router_env_name": [
-    "worker1",
-    "worker2"
-  ],
   "secrets": {
     "service_cf_id": "<service_cf_id>",
     "service_cf_secret": "<service_cf_secret>",
@@ -16,6 +11,29 @@
     "auth_header_secret": "secret_value_auth_gate",
     "id_header": "X-ID"
   },
+  "router_route": [
+    {
+      "id": 1,
+      "name": "worker1",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker1.example.com"
+    },
+    {
+      "id": 2,
+      "name": "worker2",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker2.example.com"
+    },
+    {
+      "id": 3,
+      "name": "worker3",
+      "use_custom_domain": "false",
+      "use_dev_subdomain": "true",
+      "pattern": "worker3.example.com"
+    }
+  ],
   "listeners": [
     {
       "id": 1,
