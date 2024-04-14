@@ -1,5 +1,6 @@
 .DS_Store
 routerurls.txt
+headers_profile.json
 config.json
 .first_deployment.txt
 # Logs

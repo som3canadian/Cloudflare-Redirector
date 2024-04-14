@@ -175,6 +175,8 @@ function deployWorkers() {
 
 function loopListeners() {
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
+  # create headers_profile.json
+  echo "{" > "$this_path"/headers_profile.json
   echo ""
   echo "Looping through listeners"
   cd "$workers_folder/cf-redirector-worker" || exit
@@ -188,6 +190,11 @@ function loopListeners() {
     temp_listener_address=$(jq -r ".listeners[$LISTENER_COUNT].address" "$config_file")
     temp_listener_default=$(jq -r ".listeners[$LISTENER_COUNT].is_default" "$config_file")
     temp_listener_var_name="LISTEN_ENDPOINT_$temp_listener_name_uppercase"
+    #
+    # adding to headers_profile.json
+    echo "\"headers_$temp_listener_name\":[{\"name\":\"$secret_id_header\",\"value\":\"$temp_listener_id\"},{\"name\":\"$secret_router_header\",\"value\":\"$secret_router_header_secret\"}]," >> "$this_path"/headers_profile.json
+    #
+    echo ""
     #
     if [[ $temp_listener_default == "true" ]]; then
       echo "$temp_listener_address" | wrangler secret put LISTEN_ENDPOINT
@@ -210,6 +217,12 @@ function loopListeners() {
     echo "}"
   } >> src/index.js
   cd "$this_path" || exit
+  #
+  # finishing headers_profile.json
+  cat "$this_path"/headers_profile.json | sed '$s/,$//' > "$this_path"/headers_profile_temp.json
+  echo "}" >> "$this_path"/headers_profile_temp.json
+  rm "$this_path"/headers_profile.json
+  mv "$this_path"/headers_profile_temp.json "$this_path"/headers_profile.json
 }
 
 function deleteAllWorkers() {
@@ -237,14 +250,22 @@ function deleteAllWorkers() {
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
   rm "$this_path/routerurls.txt"
   rm "$this_path/.first_deployment.txt"
+  rm "$this_path/headers_profile.json"
 }
 
 function outputRouterHosts() {
   echo ""
   echo ""
   echo "[*] Your URLs(Hosts) for your C2 profiles:"
+  echo ""
   cat routerurls.txt
   echo ""
+  # if jq is installed
+  if command -v jq &>/dev/null; then
+    jq '.' "$this_path"/headers_profile.json
+  else
+    cat "$this_path"/headers_profile.json
+  fi
 }
 
 function checkFirstDeployment() {

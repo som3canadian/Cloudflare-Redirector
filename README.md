@@ -105,13 +105,13 @@ Config file example:
       "id": 2,
       "name": "mythic",
       "address": "https://mythic-listener.example.com/",
-      "is_default": "false"
+      "is_default": "true"
     },
     {
       "id": 3,
       "name": "sliver",
       "address": "https://sliver-listener.example.com/",
-      "is_default": "true"
+      "is_default": "false"
     }
   ]
 }
