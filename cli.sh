@@ -175,24 +175,31 @@ function deployWorkers() {
 
 function loopListeners() {
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
-  # create headers_profile.json
-  echo "{" > "$this_path"/headers_profile.json
+  # create profiles.json
+  echo "{" > "$this_path"/profiles.json
   echo ""
   echo "Looping through listeners"
   cd "$workers_folder/cf-redirector-worker" || exit
   LISTENER_COUNT=0
-  echo "" >> src/index.js
-  echo "function setDestUrl(PRESHARED_ID_HEADER) {" >> src/index.js
+  {
+    echo ""
+    echo "function setDestUrl(PRESHARED_ID_HEADER) {"
+    echo "  let this_destUrl = LISTEN_ENDPOINT;"
+  } >> src/index.js
   while [[ $LISTENER_COUNT -lt $listener_count ]]; do
     temp_listener_id=$(jq -r ".listeners[$LISTENER_COUNT].id" "$config_file")
     temp_listener_name=$(jq -r ".listeners[$LISTENER_COUNT].name" "$config_file")
     temp_listener_name_uppercase=$(echo "$temp_listener_name" | tr '[:lower:]' '[:upper:]')
+    temp_listener_port=$(jq -r ".listeners[$LISTENER_COUNT].port" "$config_file")
+    temp_listener_bind_port=$(jq -r ".listeners[$LISTENER_COUNT].bind_port" "$config_file")
     temp_listener_address=$(jq -r ".listeners[$LISTENER_COUNT].address" "$config_file")
     temp_listener_default=$(jq -r ".listeners[$LISTENER_COUNT].is_default" "$config_file")
     temp_listener_var_name="LISTEN_ENDPOINT_$temp_listener_name_uppercase"
     #
-    # adding to headers_profile.json
-    echo "\"headers_$temp_listener_name\":[{\"name\":\"$secret_id_header\",\"value\":\"$temp_listener_id\"},{\"name\":\"$secret_router_header\",\"value\":\"$secret_router_header_secret\"}]," >> "$this_path"/headers_profile.json
+    # adding to profiles.json
+    #  echo "\"headers_$temp_listener_name\":[{\"name\":\"$secret_id_header\",\"value\":\"$temp_listener_id\"},{\"name\":\"$secret_router_header\",\"value\":\"$secret_router_header_secret\"}]," >> "$this_path"/profiles.json
+    echo "$temp_listener_name"
+    echo "\"$temp_listener_name\": {\"port\": \"$temp_listener_port\",\"bind_port\": \"$temp_listener_bind_port\",\"headers\":[{\"name\":\"$secret_id_header\",\"value\":\"$temp_listener_id\"},{\"name\":\"$secret_router_header\",\"value\":\"$secret_router_header_secret\"}]}," >> "$this_path"/profiles.json
     #
     echo ""
     #
@@ -210,19 +217,16 @@ function loopListeners() {
     LISTENER_COUNT=$((LISTENER_COUNT + 1))
   done
   {
-    echo "  else {"
-    echo "    this_destUrl = LISTEN_ENDPOINT;"
-    echo "  }"
     echo "  return this_destUrl;"
     echo "}"
   } >> src/index.js
   cd "$this_path" || exit
   #
-  # finishing headers_profile.json
-  cat "$this_path"/headers_profile.json | sed '$s/,$//' > "$this_path"/headers_profile_temp.json
-  echo "}" >> "$this_path"/headers_profile_temp.json
-  rm "$this_path"/headers_profile.json
-  mv "$this_path"/headers_profile_temp.json "$this_path"/headers_profile.json
+  # finishing profiles.json
+  cat "$this_path"/profiles.json | sed '$s/,$//' > "$this_path"/profiles_temp.json
+  echo "}" >> "$this_path"/profiles_temp.json
+  rm "$this_path"/profiles.json
+  mv "$this_path"/profiles_temp.json "$this_path"/profiles.json
 }
 
 function deleteAllWorkers() {
@@ -250,7 +254,7 @@ function deleteAllWorkers() {
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
   rm "$this_path/routerurls.txt"
   rm "$this_path/.first_deployment.txt"
-  rm "$this_path/headers_profile.json"
+  rm "$this_path/profiles.json"
 }
 
 function outputRouterHosts() {
@@ -262,9 +266,9 @@ function outputRouterHosts() {
   echo ""
   # if jq is installed
   if command -v jq &>/dev/null; then
-    jq '.' "$this_path"/headers_profile.json
+    jq '.' "$this_path"/profiles.json
   else
-    cat "$this_path"/headers_profile.json
+    cat "$this_path"/profiles.json
   fi
 }
 

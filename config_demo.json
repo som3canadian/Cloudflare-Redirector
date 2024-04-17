@@ -39,19 +39,25 @@
       "id": 1,
       "name": "havoc",
       "address": "https://havoc-listener.example.com/",
-      "is_default": "false"
+      "is_default": "false",
+      "port": "443",
+      "bind_port": "8443"
     },
     {
       "id": 2,
       "name": "mythic",
       "address": "https://mythic-listener.example.com/",
-      "is_default": "true"
+      "is_default": "true",
+      "port": "443",
+      "bind_port": "9443"
     },
     {
       "id": 3,
       "name": "sliver",
       "address": "https://sliver-listener.example.com/",
-      "is_default": "false"
+      "is_default": "false",
+      "port": "443",
+      "bind_port": "6443"
     }
   ]
 }
