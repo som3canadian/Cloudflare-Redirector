@@ -6,7 +6,7 @@ workers_folder="$this_path/workers"
 
 cf_redirector_auth="cf-redirector-auth"
 redirector_auth="AUTH_WORKER"
-cf_redirector_worker="cf-redirector-worker"
+cf_redirector_worker="cf-redirector-work"
 redirector_worker="REDIRECTOR_WORKER"
 
 account_dev_subdomain=$(jq -r '.cf_account_dev_subdomain' "$config_file")
@@ -251,6 +251,9 @@ function deleteAllWorkers() {
   git checkout -- "$workers_folder/cf-redirector-auth/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
+  # fix name in and the worker wrangler.toml
+  # change name = "cf-redirector-worker" by name = "cf-redirector-work"
+  sed -i '' 's/cf-redirector-worker/cf-redirector-work/g' "$workers_folder/cf-redirector-worker/wrangler.toml"
   rm "$this_path/routerurls.txt"
   rm "$this_path/.first_deployment.txt"
   rm "$this_path/profiles.json"
