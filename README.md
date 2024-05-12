@@ -123,6 +123,8 @@ Config file example:
 }
 ```
 
+Note: `id` value is what will be used in for the `X-ID` header. Taking the example above, mythic listener profile will need to have `X-ID: 2` in the header.
+
 ### Custom Domains
 
 Using custom domain is optional (`router_route` default configuration doesnt need to be change). You can use the default `workers.dev` subdomain, which is set by the `cf_account_dev_subdomain` key in the config file. Just make sure to set `use_dev_subdomain` to true. So yes, if you set `use_dev_subdomain` to true, you don't need to do care about the `pattern` config.
