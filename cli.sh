@@ -124,7 +124,7 @@ function loopRoute() {
     router_route_pattern=$(jq -r ".router_route[$COUNT].pattern" "$config_file")
     #
     this_router_route_env="[env.$temp_router_route_name]"
-    this_router_name="name = \"cf-redirector-$temp_router_route_name\""
+    this_router_name="name = \"$temp_router_route_name\""
     {
       echo ""
       echo "$this_router_route_env"
@@ -138,7 +138,7 @@ function loopRoute() {
       echo "$worker_domain" >> routerurls.txt
     fi
     if [[ $router_use_dev_subdomain == "true" ]]; then
-      worker_domain="cf-redirector-$temp_router_route_name.$account_dev_subdomain"
+      worker_domain="$temp_router_route_name.$account_dev_subdomain"
       echo "workers_dev = true" >> "$workers_folder/cf-redirector-router/wrangler.toml"
       echo "$worker_domain" >> routerurls.txt
     fi
