@@ -88,7 +88,6 @@ function secretsRedirectorWorker() {
   echo "$secret_jwt_secret" | wrangler secret put JWT_SECRET
   echo "$secret_service_cf_id" | wrangler secret put SERVICE_CF_ID
   echo "$secret_service_cf_secret" | wrangler secret put SERVICE_CF_SECRET
-  echo "https://tuo-list.probablyanything.com/" | wrangler secret put LISTEN_ENDPOINT
   echo "$secret_id_header" | wrangler secret put ID_HEADER
   cd "$this_path" || exit
 }
