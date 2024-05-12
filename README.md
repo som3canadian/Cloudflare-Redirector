@@ -74,24 +74,24 @@ Config file example:
   "router_route": [
     {
       "id": 1,
-      "name": "worker1",
+      "name": "router1",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker1.example.com"
+      "pattern": "router1.example.com"
     },
     {
       "id": 2,
-      "name": "worker2",
+      "name": "router2",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker2.example.com"
+      "pattern": "router2.example.com"
     },
     {
       "id": 3,
-      "name": "worker3",
+      "name": "router3",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker3.example.com"
+      "pattern": "router3.example.com"
     }
   ],
   "listeners": [
@@ -136,24 +136,24 @@ If you want to use custom domain, here is an example:
   "router_route": [
     {
       "id": 1,
-      "name": "worker1",
+      "name": "router1",
       "use_custom_domain": "true",
       "use_dev_subdomain": "false",
-      "pattern": "worker1.mycustomdomain.com"
+      "pattern": "router1.mycustomdomain.com"
     },
     {
       "id": 2,
-      "name": "worker2",
+      "name": "router2",
       "use_custom_domain": "true",
       "use_dev_subdomain": "true",
-      "pattern": "worker2.anothercustomdomain.com"
+      "pattern": "router2.anothercustomdomain.com"
     },
     {
       "id": 3,
-      "name": "worker3",
+      "name": "router3",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker3.example.com"
+      "pattern": "router3.example.com"
     }
   ],
 ...
@@ -161,10 +161,10 @@ If you want to use custom domain, here is an example:
 
 This configuration will create 4 URLs (Hosts for your C2 profile):
 
-- `worker1.mycustomdomain.com`
-- `worker2.anothercustomdomain.com`
-- `worker2.<subdomain>.workers.dev`
-- `worker3.<subdomain>.workers.dev`
+- `router1.mycustomdomain.com`
+- `router2.anothercustomdomain.com`
+- `cf-redirector-router2.<subdomain>.workers.dev`
+- `cf-redirector-router3.<subdomain>.workers.dev`
 
 note: domain(s) must be in the same Cloudflare account.
 

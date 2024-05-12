@@ -14,24 +14,24 @@
   "router_route": [
     {
       "id": 1,
-      "name": "worker1",
+      "name": "router1",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker1.example.com"
+      "pattern": "router1.example.com"
     },
     {
       "id": 2,
-      "name": "worker2",
+      "name": "router2",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker2.example.com"
+      "pattern": "router2.example.com"
     },
     {
       "id": 3,
-      "name": "worker3",
+      "name": "router3",
       "use_custom_domain": "false",
       "use_dev_subdomain": "true",
-      "pattern": "worker3.example.com"
+      "pattern": "router3.example.com"
     }
   ],
   "listeners": [
