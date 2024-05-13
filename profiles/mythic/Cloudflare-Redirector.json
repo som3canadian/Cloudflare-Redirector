@@ -1,0 +1,38 @@
+{
+  "c2profile_name": "http",
+  "c2_instance": {
+    "callback_host": "https://router1.subdomain.workers.dev",
+    "callback_interval": "11",
+    "callback_jitter": "18",
+    "callback_port": "443",
+    "AESPSK": "aes256_hmac",
+    "get_uri": "index",
+    "headers": [
+      {
+        "name": "User-Agent",
+        "value": "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
+        "default_show": true,
+        "default_value": "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko"
+      },
+      {
+        "name": "X-ID",
+        "value": "2",
+        "default_show": true
+      },
+      {
+        "name": "X-Header",
+        "value": "secret_value",
+        "default_show": true
+      }
+    ],
+    "killdate": "2025-05-13",
+    "query_path_name": "q",
+    "post_uri": "data",
+    "encrypted_exchange_check": "true",
+    "proxy_host": "",
+    "proxy_pass": "",
+    "proxy_port": "",
+    "proxy_user": ""
+  },
+  "instance_name": "Cloudflare-Redirector"
+}
