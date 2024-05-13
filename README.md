@@ -163,8 +163,8 @@ This configuration will create 4 URLs (Hosts for your C2 profile):
 
 - `router1.mycustomdomain.com`
 - `router2.anothercustomdomain.com`
-- `cf-redirector-router2.<subdomain>.workers.dev`
-- `cf-redirector-router3.<subdomain>.workers.dev`
+- `router2.<subdomain>.workers.dev`
+- `router3.<subdomain>.workers.dev`
 
 note: domain(s) must be in the same Cloudflare account.
 
