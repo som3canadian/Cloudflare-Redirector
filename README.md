@@ -34,29 +34,72 @@ Todo:
 - Initiate your Cloudflare Zero Trust account through your Cloudflare "regular" account. (will ask for a credit card but free for the first 50 users). See screenshot `1.jpg` in assets folder.
 - Install Cloudflare tunnel ([cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)) in your C2 server.
 
-## Usage
+## Cloudflare Setup
+First time setting up a cloudflare tunnel? Take a look at this [article](https://www.redteaming.org/cftunnels.html) provide by [Cyb3rC3lt](https://twitter.com/Cyb3rC3lt).
 
+Follow the steps in the screenshots (`/assets` folder)
+- `1-2.jpg` - Access Zero Trust section
+- `3.jpg` - Create new service-auth token
+- `4-6.jpg` - Create new tunnel (and setting up on your C2 server)
+- `7-12.jpg` - Create application (self-hosted) rules to protect your listener (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
+
+## Setup & Usage (for the `cli.sh`)
 ![usage](assets/usagecli.png)
 
-## Setup
-
-![accountid_and_subdomain](assets/14.jpg)
-
-```bash
-# clone the repo and cd into it
-
-# copy the configuration file
-cp config_demo.json config.json
-# modify the config.json
-
-chmod +x cli.sh
-# run the cli with -f when its your first time deploying
-./cli.sh -f
-# you should see the workers in your Cloudflare dashboard
+#### 1. Clone the Repository
+```
+git clone https://github.com/som3canadian/Cloudflare-Redirector
 ```
 
-Config file example:
+#### 2. Modify the Configuration File
+```
+cd Cloudflare-Redirector
+cp config_demo.json config.json
+nano config.json
+```
 
+Navigate to Workers & Pages -> Overview -> to retrieve the values for the following fields:
+```json
+  "cf_account_id": "<account_id>",
+  "cf_account_dev_subdomain": "<subdomain>.workers.dev",
+```
+![accountid_and_subdomain](assets/14.jpg)
+
+**Secrets Examples:**
+- Navigate to Zero Trust -> Accesss -> Service Auth
+```json
+  "service_cf_id": "13ab3563c111111111c8a2288d99d2df.access",
+  "service_cf_secret": "10c5b60b4d66f5571111111111111111111111111111111111113cdb16e359fdcf8ab9e9",
+```
+- JWT password, you can generate randomly: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+```
+  "jwt_secret": "7702bf381db07aa8848da26687018c05de6ef6e7d2b08b07ecfbc84a5684644c",
+```
+
+- Configure headers and their values. The `router_header` should be included in your C2 payload headers for verification to ensure that your redirector is only accessible with this header; all other requests without it will be rejected.
+```json
+  "router_header": "X-Header",
+  "router_header_secret": "secret_value",
+  "auth_header": "X-Header-Gate",
+  "auth_header_secret": "secret_value_auth_gate",
+```
+
+If using the same redirector for multiple C2 frameworks like Sliver and Mythic, the `id_header` can differentiate them (values like 1, 2, 3 correspond to "id" in the listeners section of config.json):
+```json
+  "id_header": "X-ID"
+```
+
+
+#### 3. Run the cli.sh with `-f` when its your first time deploying!
+```bash
+chmod +x cli.sh
+./cli.sh -f
+```
+#### 4. You should see the workers in your Cloudflare dashboard
+
+---
+
+#### Full Config File Example:
 ```json
 {
   "cf_account_id": "<account_id>",
@@ -168,28 +211,18 @@ This configuration will create 4 URLs (Hosts for your C2 profile):
 
 note: domain(s) must be in the same Cloudflare account.
 
-## Not sure about the Zero Trust part ?
-
-First time setting up a cloudflare tunnel? Take a look at this [article](https://www.redteaming.org/cftunnels.html) provide by [Cyb3rC3lt](https://twitter.com/Cyb3rC3lt).
-
-I also took some screenshots that are in the assets folder, but in summary:
-
-1. Access zero trust section
-
-2. Create new service-auth token
-
-3. Create new tunnel (and setting up on your C2 server)
-
-4. **Create application (self-hosted) rules to protect your listener** (in the screenshots I'm using github authentication, but you can use the default "one-time pin". BTW, we only care about the Service-Auth policy since only our redirector need to visit listener url).
+---
 
 ## After deployment
 
 - Start C2 server with your modified profile.
 
 ```bash
+# Havoc #
 # modify profiles/havoc/demo-profile.yaotl
 ./havoc server --profile profiles/cf-profile.yaotl -v
 
+# Sliver # 
 # modify ~/.sliver/configs/http-c2.json (add header)
 profiles new --skip-symbols -b https://127.0.0.1:443 --arch amd64 profileCF
 https -L 127.0.0.1 -l 443
