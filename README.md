@@ -38,25 +38,61 @@ Todo:
 
 ![usage](assets/usagecli.png)
 
-## Setup
+## Setup (for the `cli.sh`)
 
-![accountid_and_subdomain](assets/14.jpg)
-
-```bash
-# clone the repo and cd into it
-
-# copy the configuration file
-cp config_demo.json config.json
-# modify the config.json
-
-chmod +x cli.sh
-# run the cli with -f when its your first time deploying
-./cli.sh -f
-# you should see the workers in your Cloudflare dashboard
+1. **Clone the Repository**
+```
+git clone https://github.com/som3canadian/Cloudflare-Redirector
 ```
 
-Config file example:
+2. Modify the Configuration File
+```
+cd Cloudflare-Redirector
+cp config_demo.json config.json
+nano config.json
+```
 
+Navigate to Workers & Pages -> Overview -> to retrieve the values for the following fields:
+```json
+  "cf_account_id": "<account_id>",
+  "cf_account_dev_subdomain": "<subdomain>.workers.dev",
+```
+![accountid_and_subdomain](assets/14.jpg)
+
+#### Secrets Examples:
+- Navigate to Zero Trust -> Accesss -> Service Auth
+```json
+  "service_cf_id": "13ab3563c111111111c8a2288d99d2df.access",
+  "service_cf_secret": "10c5b60b4d66f5571111111111111111111111111111111111113cdb16e359fdcf8ab9e9",
+```
+- JWT password, you can generate randomly: `python3 -c "import secrets; print(secrets.token_hex(32))"`
+```
+  "jwt_secret": "7702bf381db07aa8848da26687018c05de6ef6e7d2b08b07ecfbc84a5684644c",
+```
+
+- Configure headers and their values. The `router_header` should be included in your C2 payload headers for verification to ensure that your redirector is only accessible with this header; all other requests without it will be rejected.
+```json
+  "router_header": "X-Header",
+  "router_header_secret": "secret_value",
+  "auth_header": "X-Header-Gate",
+  "auth_header_secret": "secret_value_auth_gate",
+```
+
+If using the same redirector for multiple C2 frameworks like Sliver and Mythic, the `id_header` can differentiate them (values like 1, 2, 3 correspond to "id" in the listeners section of config.json):
+```json
+  "id_header": "X-ID"
+```
+
+3. Run the cli.sh with `-f` when its your first time deploying!
+```bash
+chmod +x cli.sh
+./cli.sh -f
+```
+4. You should see the workers in your Cloudflare dashboard
+
+---
+
+#### Full Config File Example:
 ```json
 {
   "cf_account_id": "<account_id>",
