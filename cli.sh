@@ -62,10 +62,24 @@ function installDependencies() {
 function addBasicConfig() {
   echo ""
   echo "Adding basic config"
-  echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-auth/wrangler.toml"
-  echo "workers_dev = false" >> "$workers_folder/cf-redirector-auth/wrangler.toml"
-  echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-worker/wrangler.toml"
-  echo "workers_dev = false" >> "$workers_folder/cf-redirector-worker/wrangler.toml"
+  {
+    echo "account_id = \"$account_id\""
+    echo "workers_dev = false"
+    echo "preview_urls = false"
+    echo ""
+    echo "[observability.logs]"
+    echo "enabled = true"
+    echo "invocation_logs = true"
+  } >> "$workers_folder/cf-redirector-auth/wrangler.toml"
+  {
+    echo "account_id = \"$account_id\""
+    echo "workers_dev = false"
+    echo "preview_urls = false"
+    echo ""
+    echo "[observability.logs]"
+    echo "enabled = true"
+    echo "invocation_logs = true"
+  } >> "$workers_folder/cf-redirector-worker/wrangler.toml"
   echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-router/wrangler.toml"
 }
 
@@ -141,13 +155,24 @@ function loopRoute() {
       worker_domain="$temp_router_route_name.$account_dev_subdomain"
       echo "workers_dev = true" >> "$workers_folder/cf-redirector-router/wrangler.toml"
       echo "$worker_domain" >> routerurls.txt
+      # turning off the preview urls
+      echo "preview_urls = false" >> "$workers_folder/cf-redirector-router/wrangler.toml"
     fi
     if [[ $router_use_dev_subdomain == "false" ]]; then
       echo "workers_dev = false" >> "$workers_folder/cf-redirector-router/wrangler.toml"
+      # turning off the preview urls
+      echo "preview_urls = false" >> "$workers_folder/cf-redirector-router/wrangler.toml"
     fi
     #
     COUNT=$((COUNT + 1))
   done
+  # add observability logs.
+  {
+    echo ""
+    echo "[observability.logs]"
+    echo "enabled = true"
+    echo "invocation_logs = false"
+  } >> "$workers_folder/cf-redirector-router/wrangler.toml"
 }
 
 function deployWorkers() {
@@ -182,8 +207,8 @@ function loopListeners() {
   LISTENER_COUNT=0
   {
     echo ""
-    echo "function setDestUrl(PRESHARED_ID_HEADER) {"
-    echo "  let this_destUrl = LISTEN_ENDPOINT;"
+    echo "function setDestUrl(PRESHARED_ID_HEADER, env) {"
+    echo "  let this_destUrl = env.LISTEN_ENDPOINT;"
   } >> src/index.js
   while [[ $LISTENER_COUNT -lt $listener_count ]]; do
     temp_listener_id=$(jq -r ".listeners[$LISTENER_COUNT].id" "$config_file")
@@ -209,7 +234,7 @@ function loopListeners() {
     #
     {
       echo "  if (PRESHARED_ID_HEADER == \"$temp_listener_id\") {"
-      echo "    this_destUrl = $temp_listener_var_name;"
+      echo "    this_destUrl = env.$temp_listener_var_name;"
       echo "  }"
     } >> src/index.js
     #
@@ -218,6 +243,14 @@ function loopListeners() {
   {
     echo "  return this_destUrl;"
     echo "}"
+  } >> src/index.js
+  # adding export default
+  {
+    echo "export default {"
+    echo "  async fetch(request, env, ctx) {"
+    echo "    return handleRedirectorRequest(request, env);"
+    echo "  }"
+    echo "};"
   } >> src/index.js
   cd "$this_path" || exit
   #

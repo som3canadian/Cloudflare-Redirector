@@ -1,29 +1,25 @@
 import {sign} from '@tsndr/cloudflare-worker-jwt'
 const encoder = new TextEncoder();
 
-addEventListener('fetch', event => {
-  event.respondWith(handleAuthRequest(event.request));
-});
-
-async function handleAuthRequest(request) {
-  const headerValue = request.headers.get(AUTH_HEADER_KEY);
+async function handleAuthRequest(request, env) {
+  const headerValue = request.headers.get(env.AUTH_HEADER_KEY);
   if (! headerValue) {
     return unauthorizedResponse();
   }
-  const timing_result = timingSafeCheck(headerValue);
+  const timing_result = timingSafeCheck(headerValue, env);
   if (! timing_result) {
     return unauthorizedResponse();
   }
   const token = await sign({
     data: 'authorized'
-  }, JWT_SECRET, {expiresIn: '1h'});
+  }, env.JWT_SECRET, {expiresIn: '1h'});
   return new Response(JSON.stringify({token}), {status: 200});
 }
 
 // https://developers.cloudflare.com/workers/examples/protect-against-timing-attacks
-function timingSafeCheck(headerValue) {
+function timingSafeCheck(headerValue, env) {
   const a = encoder.encode(headerValue);
-  const b = encoder.encode(AUTH_HEADER_SECRET);
+  const b = encoder.encode(env.AUTH_HEADER_SECRET);
   if (a.byteLength !== b.byteLength) { // compare byte length of the two strings.
     return false;
   }
@@ -45,3 +41,9 @@ function unauthorizedResponse() {
     }
   });
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    return handleAuthRequest(request, env);
+  }
+};

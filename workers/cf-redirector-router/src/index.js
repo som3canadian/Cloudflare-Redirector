@@ -1,35 +1,30 @@
 const encoder = new TextEncoder();
 
-addEventListener('fetch', event => {
-  event.respondWith(handleAppRequest(event));
-});
-
-async function handleAppRequest(event) {
-  const request = event.request
-  const psk = request.headers.get(ROUTER_HEADER_KEY);
+async function handleAppRequest(request, env) {
+  const psk = request.headers.get(env.ROUTER_HEADER_KEY);
   if (! psk) {
     return unauthorizedResponse();
   }
-  const timing_result = timingSafeCheck(psk);
+  const timing_result = timingSafeCheck(psk, env);
   if (! timing_result) {
     return unauthorizedResponse();
   }
   const authModifiedHeaders = new Headers(request.headers);
-  authModifiedHeaders.set(AUTH_HEADER_KEY, AUTH_HEADER_SECRET);
-  const authResponse = await AUTH_WORKER.fetch(request.url, {
+  authModifiedHeaders.set(env.AUTH_HEADER_KEY, env.AUTH_HEADER_SECRET);
+  const authResponse = await env.AUTH_WORKER.fetch(request.url, {
     method: 'GET',
     headers: authModifiedHeaders
   });
   const {token} = await authResponse.json();
   // console.log(token);
-  return await redirectorRequest(request, token);
+  return await redirectorRequest(request, token, env);
   // return new Response('OK', { status: 200 });
 }
 
 // https://developers.cloudflare.com/workers/examples/protect-against-timing-attacks
-function timingSafeCheck(psk) {
+function timingSafeCheck(psk, env) {
   const a = encoder.encode(psk);
-  const b = encoder.encode(ROUTER_HEADER_SECRET);
+  const b = encoder.encode(env.ROUTER_HEADER_SECRET);
   if (a.byteLength !== b.byteLength) { // compare the two strings byte length.
     return false;
   }
@@ -41,12 +36,12 @@ function timingSafeCheck(psk) {
   return true;
 }
 
-async function redirectorRequest(request, token) {
+async function redirectorRequest(request, token, env) {
   const modifiedHeaders = new Headers(request.headers);
-  modifiedHeaders.delete(ROUTER_HEADER_KEY);
+  modifiedHeaders.delete(env.ROUTER_HEADER_KEY);
   modifiedHeaders.set("Authorization", `Bearer ${token}`)
   // console.log(token);
-  return await REDIRECTOR_WORKER.fetch(request.url, {
+  return await env.REDIRECTOR_WORKER.fetch(request.url, {
     body: request.body,
     method: request.method,
     headers: modifiedHeaders
@@ -63,3 +58,9 @@ function unauthorizedResponse() {
     }
   });
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    return await handleAppRequest(request, env);
+  }
+};
