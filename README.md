@@ -118,6 +118,8 @@ chmod +x cli.sh
 {
   "cf_account_id": "<account_id>",
   "cf_account_dev_subdomain": "<subdomain>.workers.dev",
+  "observability_logs": "false",
+  "observability_invocation_logs": "false",
   "secrets": {
     "service_cf_id": "<service_cf_id>",
     "service_cf_secret": "<service_cf_secret>",
@@ -181,6 +183,8 @@ chmod +x cli.sh
 ```
 
 Note: `id` value is what will be used in for the `X-ID` header. Taking the example above, mythic listener profile will need to have `X-ID: 2` in the header.
+
+To understand the `observability_logs` and `observability_invocation_logs` settings, please refer to the [Cloudflare Workers documentation](https://developers.cloudflare.com/workers/observability/logs/workers-logs/).
 
 ### Custom Domains
 

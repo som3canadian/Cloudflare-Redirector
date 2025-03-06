@@ -11,6 +11,8 @@ redirector_worker="REDIRECTOR_WORKER"
 
 account_dev_subdomain=$(jq -r '.cf_account_dev_subdomain' "$config_file")
 account_id=$(jq -r '.cf_account_id' "$config_file")
+observability_logs=$(jq -r '.observability_logs' "$config_file")
+observability_invocation_logs=$(jq -r '.observability_invocation_logs' "$config_file")
 router_route_count=$(jq '.router_route | length' "$config_file")
 listener_count=$(jq '.listeners | length' "$config_file")
 secret_service_cf_id=$(jq -r '.secrets.service_cf_id' "$config_file")
@@ -30,6 +32,8 @@ function printInfo() {
   echo ""
   echo "account_id: $account_id"
   echo "account_dev_subdomain: $account_dev_subdomain"
+  echo "observability_logs: $observability_logs"
+  echo "observability_invocation_logs: $observability_invocation_logs"
   echo "router_route_count: $router_route_count"
   echo "listener_count: $listener_count"
   echo "secret_service_cf_id: $secret_service_cf_id"
@@ -68,8 +72,8 @@ function addBasicConfig() {
     echo "preview_urls = false"
     echo ""
     echo "[observability.logs]"
-    echo "enabled = true"
-    echo "invocation_logs = true"
+    echo "enabled = $observability_logs"
+    echo "invocation_logs = $observability_invocation_logs"
   } >> "$workers_folder/cf-redirector-auth/wrangler.toml"
   {
     echo "account_id = \"$account_id\""
@@ -77,8 +81,8 @@ function addBasicConfig() {
     echo "preview_urls = false"
     echo ""
     echo "[observability.logs]"
-    echo "enabled = true"
-    echo "invocation_logs = true"
+    echo "enabled = $observability_logs"
+    echo "invocation_logs = $observability_invocation_logs"
   } >> "$workers_folder/cf-redirector-worker/wrangler.toml"
   echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-router/wrangler.toml"
 }
@@ -170,8 +174,8 @@ function loopRoute() {
   {
     echo ""
     echo "[observability.logs]"
-    echo "enabled = true"
-    echo "invocation_logs = false"
+    echo "enabled = $observability_logs"
+    echo "invocation_logs = $observability_invocation_logs"
   } >> "$workers_folder/cf-redirector-router/wrangler.toml"
 }
 
