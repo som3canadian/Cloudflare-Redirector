@@ -571,7 +571,6 @@ function firstDeployment() {
   addBasicConfig
   loopRoute
   loopWebsocketRoute
-  deployWorkers
   doAllSecrets
 }
 

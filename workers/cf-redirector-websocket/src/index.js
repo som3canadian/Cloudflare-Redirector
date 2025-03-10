@@ -124,6 +124,10 @@ export default {
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Sorry, bad request", { status: 400 });
     }
+    // verify user-agent
+    if (userAgent !== env.USER_AGENT_WS) {
+      return new Response("Sorry, bad request", { status: 400 });
+    }
 
     // Create a pair of WebSocket connections.
     const pair = new WebSocketPair();
