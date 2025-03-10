@@ -8,6 +8,10 @@ For each domain that you want to use for websocket, you need to enable the webso
 
 ![Websocket Domain Settings](./assets/websocket_1.jpg)
 
+Note for Zero Trust: In your Tunnel settings, use a `http` service, wss will work even if is not an option in the UI.
+
+![Tunnel Settings](./assets/websocket_2.jpg)
+
 ## Config File Example
 
 ```json
@@ -55,7 +59,28 @@ For each domain that you want to use for websocket, you need to enable the webso
 
 Dont forget to set `use_websocket_listeners` to `true`.
 
-## Mythic profile example
+## Mythic Example
+
+### Websocket basic config example
+
+```json
+{
+    "instances": [
+        {
+            "bindaddress": "127.0.0.1:8081",
+            "usessl": false,
+            "sslkey": "",
+            "sslcert": "",
+            "websocketuri": "socket",
+            "defaultpage": "index.html",
+            "debug": false,
+            "payloads": {}
+        }
+    ]
+}
+```
+
+### Profile Example
 
 ```json
 {
@@ -76,3 +101,5 @@ Dont forget to set `use_websocket_listeners` to `true`.
   "instance_name": "Cloudflare-Redirector-Websocket"
 }
 ```
+
+Note: even if we set `usessl` to `false` in websocket config, we need to use `wss://` in the callback_host.
