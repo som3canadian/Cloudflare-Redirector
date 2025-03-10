@@ -1,6 +1,7 @@
 # Running websocket redirector
 
-Websocket redirector has been test with Mythic C2. Other C2 should work but I did not test it.
+- Websocket redirector has been test with Mythic C2. Other C2 should work but I did not test it.
+- Since we have less options in terms of headers, verification is done with the websocket path(endpoint) and the user agent.
 
 ## Domain(s) Settings
 
