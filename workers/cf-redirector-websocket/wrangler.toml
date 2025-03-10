@@ -1,0 +1,3 @@
+name = "cf-redirector-websocket"
+main = "src/index.js"
+compatibility_date = "2025-01-29"
