@@ -16,6 +16,7 @@ Note: The idea or "workflow" can be scaled and can also integrate more feature (
   - JWT setup is overkill for this project, but wanted to try it out and learn new things.
 - Support multiple C2 listeners.
 - I made a branch `v1` with the old version.
+- See [websocket.md](websocket.md) for websocket redirector support.
 
 note: Redirector worker and Auth worker does not have any public URL (only accessbile with worker service binding).
 
@@ -120,6 +121,7 @@ chmod +x cli.sh
   "cf_account_dev_subdomain": "<subdomain>.workers.dev",
   "observability_logs": "false",
   "observability_invocation_logs": "false",
+  "use_websocket_listeners": "false",
   "secrets": {
     "service_cf_id": "<service_cf_id>",
     "service_cf_secret": "<service_cf_secret>",
@@ -178,7 +180,9 @@ chmod +x cli.sh
       "port": "443",
       "bind_port": "6443"
     }
-  ]
+  ],
+  "websocket_route": [],
+  "listeners_websocket": []
 }
 ```
 

@@ -3,6 +3,7 @@
   "cf_account_dev_subdomain": "<subdomain>.workers.dev",
   "observability_logs": "false",
   "observability_invocation_logs": "false",
+  "use_websocket_listeners": "false",
   "secrets": {
     "service_cf_id": "<service_cf_id>",
     "service_cf_secret": "<service_cf_secret>",
@@ -61,5 +62,7 @@
       "port": "443",
       "bind_port": "6443"
     }
-  ]
+  ],
+  "websocket_route": [],
+  "listeners_websocket": []
 }
