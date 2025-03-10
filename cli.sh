@@ -347,7 +347,17 @@ function loopListenersWebsocket() {
   {
     echo "function setDestUrl(env, requestPath) {"
     echo "  let this_destUrl;"
-  } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  } >> "$workers_folder/cf-redirector-websocket/src/destUrl.js"
+  {
+    echo ""
+    echo "function setDestUserAgent(env, requestPath) {"
+    echo "  let this_destUserAgent;"
+  } >> "$workers_folder/cf-redirector-websocket/src/destUserAgent.js"
+  {
+    echo ""
+    echo "function setDestInactiveTimeout(env, requestPath) {"
+    echo "  let this_destInactiveTimeout;"
+  } >> "$workers_folder/cf-redirector-websocket/src/setDestInactiveTimeout.js"
   while [[ $LISTENERCOUNT -lt $websocket_listener_count ]]; do
     temp_websocket_listener_name=$(jq -r ".listeners_websocket[$LISTENERCOUNT].name" "$config_file")
     temp_websocket_listener_path=$(jq -r ".listeners_websocket[$LISTENERCOUNT].path" "$config_file")
@@ -359,20 +369,41 @@ function loopListenersWebsocket() {
       echo "  if (requestPath === \"$temp_websocket_listener_path\") {"
       echo "    this_destUrl = env.LISTENER_ADDRESS_WS_$temp_websocket_listener_name_uppercase + env.LISTENER_PATH_WS_$temp_websocket_listener_name_uppercase;"
       echo "  }"
-    } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+    } >> "$workers_folder/cf-redirector-websocket/src/destUrl.js"
+    {
+      echo "  if (requestPath === \"$temp_websocket_listener_path\") {"
+      echo "    this_destUserAgent = env.USER_AGENT_WS_$temp_websocket_listener_name_uppercase;"
+      echo "  }"
+    } >> "$workers_folder/cf-redirector-websocket/src/destUserAgent.js"
+    {
+      echo "  if (requestPath === \"$temp_websocket_listener_path\") {"
+      echo "    this_destInactiveTimeout = env.INACTIVE_TIMEOUT_WS_$temp_websocket_listener_name_uppercase;"
+      echo "  }"
+    } >> "$workers_folder/cf-redirector-websocket/src/setDestInactiveTimeout.js"
     # add to profiles_websocket.json
     # "mythic_websocket": {"port": "443","bind_port": "8889","path": "socket","headers":[{"name":"User-Agent","value":"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko"}]},
     echo "\"$temp_websocket_listener_name\": {\"port\": \"$temp_websocket_listener_port\",\"bind_port\": \"$temp_websocket_listener_bind_port\",\"path\": \"$temp_websocket_listener_path\",\"headers\":[{\"name\":\"User-Agent\",\"value\":\"$temp_websocket_listener_useragent\"}]}," >> "$this_path"/profiles_websocket.json
     #
     LISTENERCOUNT=$((LISTENERCOUNT + 1))
   done
+  # destUrl.js
   {
     echo "  else {"
     echo "    return new Response('sorry, bad request', { status: 403 });"
     echo "  }"
     echo "  return this_destUrl;"
     echo "}"
-  } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  } >> "$workers_folder/cf-redirector-websocket/src/destUrl.js"
+  # destUserAgent.js
+  {
+    echo "  return this_destUserAgent;"
+    echo "}"
+  } >> "$workers_folder/cf-redirector-websocket/src/destUserAgent.js"
+  # setDestInactiveTimeout.js
+  {
+    echo "  return this_destInactiveTimeout;"
+    echo "}"
+  } >> "$workers_folder/cf-redirector-websocket/src/setDestInactiveTimeout.js"
   #
   # finishing profiles_websocket.json
   cat "$this_path"/profiles_websocket.json | sed '$s/,$//' > "$this_path"/profiles_websocket_temp.json
@@ -381,9 +412,15 @@ function loopListenersWebsocket() {
   mv "$this_path"/profiles_websocket_temp.json "$this_path"/profiles_websocket.json
   #
   mv "$workers_folder/cf-redirector-websocket/src/index.js" "$workers_folder/cf-redirector-websocket/src/index_temp.js"
-  cat "$workers_folder/cf-redirector-websocket/src/index_temp.js" >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  {
+    cat "$workers_folder/cf-redirector-websocket/src/destUserAgent.js"
+    cat "$workers_folder/cf-redirector-websocket/src/setDestInactiveTimeout.js"
+    cat "$workers_folder/cf-redirector-websocket/src/index_temp.js"
+  } >> "$workers_folder/cf-redirector-websocket/src/destUrl.js"
   rm "$workers_folder/cf-redirector-websocket/src/index_temp.js"
-  mv "$workers_folder/cf-redirector-websocket/src/test.js" "$workers_folder/cf-redirector-websocket/src/index.js"
+  rm "$workers_folder/cf-redirector-websocket/src/destUserAgent.js"
+  rm "$workers_folder/cf-redirector-websocket/src/setDestInactiveTimeout.js"
+  mv "$workers_folder/cf-redirector-websocket/src/destUrl.js" "$workers_folder/cf-redirector-websocket/src/index.js"
 }
 
 function deployWebsocketListenerSecrets() {
@@ -406,7 +443,7 @@ function deployWebsocketListenerSecrets() {
       echo "$temp_websocket_listener_useragent" | wrangler secret put "USER_AGENT_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
       echo "$temp_websocket_listener_path" | wrangler secret put "LISTENER_PATH_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
       echo "$temp_websocket_listener_address" | wrangler secret put "LISTENER_ADDRESS_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
-      echo "$temp_websocket_listener_inactive_timeout" | wrangler secret put "INACTIVE_TIMEOUT_WS" --env "$temp_websocket_route_name"
+      echo "$temp_websocket_listener_inactive_timeout" | wrangler secret put "INACTIVE_TIMEOUT_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
     done
     COUNT=$((COUNT + 1))
   done
@@ -535,7 +572,6 @@ function firstDeployment() {
   loopRoute
   loopWebsocketRoute
   deployWorkers
-  deployWebsocketWorkers
   doAllSecrets
 }
 
