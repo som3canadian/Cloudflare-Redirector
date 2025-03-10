@@ -1,5 +1,7 @@
 # Running websocket redirector
 
+Websocket redirector has been test with Mythic C2. Other C2 should work but I did not test it.
+
 ## Domain(s) Settings
 
 For each domain that you want to use for websocket, you need to enable the websocket config in your Cloudflare dashboard.
@@ -50,6 +52,8 @@ For each domain that you want to use for websocket, you need to enable the webso
   ]
 }
 ```
+
+Dont forget to set `use_websocket_listeners` to `true`.
 
 ## Mythic profile example
 

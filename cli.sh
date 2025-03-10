@@ -8,12 +8,14 @@ cf_redirector_auth="cf-redirector-auth"
 redirector_auth="AUTH_WORKER"
 cf_redirector_worker="cf-redirector-worker"
 redirector_worker="REDIRECTOR_WORKER"
-
+use_websocket_listeners=$(jq -r '.use_websocket_listeners' "$config_file")
 account_dev_subdomain=$(jq -r '.cf_account_dev_subdomain' "$config_file")
 account_id=$(jq -r '.cf_account_id' "$config_file")
 observability_logs=$(jq -r '.observability_logs' "$config_file")
 observability_invocation_logs=$(jq -r '.observability_invocation_logs' "$config_file")
 router_route_count=$(jq '.router_route | length' "$config_file")
+websocket_route_count=$(jq '.websocket_route | length' "$config_file")
+websocket_listener_count=$(jq '.listeners_websocket | length' "$config_file")
 listener_count=$(jq '.listeners | length' "$config_file")
 secret_service_cf_id=$(jq -r '.secrets.service_cf_id' "$config_file")
 secret_service_cf_secret=$(jq -r '.secrets.service_cf_secret' "$config_file")
@@ -32,6 +34,7 @@ function printInfo() {
   echo ""
   echo "account_id: $account_id"
   echo "account_dev_subdomain: $account_dev_subdomain"
+  echo "use_websocket_listeners: $use_websocket_listeners"
   echo "observability_logs: $observability_logs"
   echo "observability_invocation_logs: $observability_invocation_logs"
   echo "router_route_count: $router_route_count"
@@ -85,6 +88,9 @@ function addBasicConfig() {
     echo "invocation_logs = $observability_invocation_logs"
   } >> "$workers_folder/cf-redirector-worker/wrangler.toml"
   echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-router/wrangler.toml"
+  if [[ $use_websocket_listeners == "true" ]]; then
+    echo "account_id = \"$account_id\"" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+  fi
 }
 
 function secretsAuthWorker() {
@@ -265,6 +271,166 @@ function loopListeners() {
   mv "$this_path"/profiles_temp.json "$this_path"/profiles.json
 }
 
+function secretsWebsocketWorker() {
+  if [[ $use_websocket_listeners == "false" ]]; then
+    return
+  fi
+  echo ""
+  echo "Creating secrets for cf-redirector-websocket"
+  cd "$workers_folder/cf-redirector-websocket" || exit
+  COUNT=0
+  while [[ $COUNT -lt $websocket_route_count ]]; do
+    temp_websocket_route_name=$(jq -r ".websocket_route[$COUNT].name" "$config_file")
+    echo "$secret_service_cf_id" | wrangler secret put SERVICE_CF_ID_WS --env "$temp_websocket_route_name"
+    echo "$secret_service_cf_secret" | wrangler secret put SERVICE_CF_SECRET_WS --env "$temp_websocket_route_name"
+    COUNT=$((COUNT + 1))
+  done
+  cd "$this_path" || exit
+}
+
+function loopWebsocketRoute() {
+  echo ""
+  if [[ $use_websocket_listeners == "false" ]]; then
+    return
+  fi
+  echo "Looping through websocket routes"
+  COUNT=0
+  while [[ $COUNT -lt $websocket_route_count ]]; do
+    temp_websocket_route_name=$(jq -r ".websocket_route[$COUNT].name" "$config_file")
+    temp_websocket_route_use_dev_subdomain=$(jq -r ".websocket_route[$COUNT].use_dev_subdomain" "$config_file")
+    temp_websocket_route_use_custom_domain=$(jq -r ".websocket_route[$COUNT].use_custom_domain" "$config_file")
+    temp_websocket_route_pattern=$(jq -r ".websocket_route[$COUNT].pattern" "$config_file")
+    #
+    this_websocket_route_env="[env.$temp_websocket_route_name]"
+    this_websocket_name="name = \"$temp_websocket_route_name\""
+    {
+      echo ""
+      echo "$this_websocket_route_env"
+      echo "$this_websocket_name"
+    } >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+    # check if custom domain
+    if [[ $temp_websocket_route_use_custom_domain == "true" ]]; then
+      worker_domain="$temp_websocket_route_pattern"
+      echo "routes = [{ pattern = \"$worker_domain\", custom_domain = $temp_websocket_route_use_custom_domain }]" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+      echo "$worker_domain" >> routerurls.txt
+    fi
+    if [[ $temp_websocket_route_use_dev_subdomain == "true" ]]; then
+      worker_domain="$temp_websocket_route_name.$account_dev_subdomain"
+      echo "workers_dev = true" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+      echo "preview_urls = false" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+      echo "$worker_domain" >> routerurls.txt
+    fi
+    if [[ $temp_websocket_route_use_dev_subdomain == "false" ]]; then
+      echo "workers_dev = false" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+      echo "preview_urls = false" >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+    fi
+    COUNT=$((COUNT + 1))
+  done
+  # add observability logs.
+  {
+    echo ""
+    echo "[observability.logs]"
+    echo "enabled = $observability_logs"
+    echo "invocation_logs = $observability_invocation_logs"
+  } >> "$workers_folder/cf-redirector-websocket/wrangler.toml"
+}
+
+function loopListenersWebsocket() {
+  echo ""
+  if [[ $use_websocket_listeners == "false" ]]; then
+    return
+  fi
+  git checkout -- "$workers_folder/cf-redirector-websocket/src/index.js"
+  echo "{" > "$this_path"/profiles_websocket.json
+  echo "Looping through listeners websocket"
+  LISTENERCOUNT=0
+  {
+    echo "function setDestUrl(env, requestPath) {"
+    echo "  let this_destUrl;"
+  } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  while [[ $LISTENERCOUNT -lt $websocket_listener_count ]]; do
+    temp_websocket_listener_name=$(jq -r ".listeners_websocket[$LISTENERCOUNT].name" "$config_file")
+    temp_websocket_listener_path=$(jq -r ".listeners_websocket[$LISTENERCOUNT].path" "$config_file")
+    temp_websocket_listener_name_uppercase=$(echo "$temp_websocket_listener_name" | tr '[:lower:]' '[:upper:]')
+    temp_websocket_listener_port=$(jq -r ".listeners_websocket[$LISTENERCOUNT].port" "$config_file")
+    temp_websocket_listener_bind_port=$(jq -r ".listeners_websocket[$LISTENERCOUNT].bind_port" "$config_file")
+    temp_websocket_listener_useragent=$(jq -r ".listeners_websocket[$LISTENERCOUNT].user_agent" "$config_file")
+    {
+      echo "  if (requestPath === \"$temp_websocket_listener_path\") {"
+      echo "    this_destUrl = env.LISTENER_ADDRESS_WS_$temp_websocket_listener_name_uppercase + env.LISTENER_PATH_WS_$temp_websocket_listener_name_uppercase;"
+      echo "  }"
+    } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+    # add to profiles_websocket.json
+    # "mythic_websocket": {"port": "443","bind_port": "8889","path": "socket","headers":[{"name":"User-Agent","value":"Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko"}]},
+    echo "\"$temp_websocket_listener_name\": {\"port\": \"$temp_websocket_listener_port\",\"bind_port\": \"$temp_websocket_listener_bind_port\",\"path\": \"$temp_websocket_listener_path\",\"headers\":[{\"name\":\"User-Agent\",\"value\":\"$temp_websocket_listener_useragent\"}]}," >> "$this_path"/profiles_websocket.json
+    #
+    LISTENERCOUNT=$((LISTENERCOUNT + 1))
+  done
+  {
+    echo "  else {"
+    echo "    return new Response('sorry, bad request', { status: 403 });"
+    echo "  }"
+    echo "  return this_destUrl;"
+    echo "}"
+  } >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  #
+  # finishing profiles_websocket.json
+  cat "$this_path"/profiles_websocket.json | sed '$s/,$//' > "$this_path"/profiles_websocket_temp.json
+  echo "}" >> "$this_path"/profiles_websocket_temp.json
+  rm "$this_path"/profiles_websocket.json
+  mv "$this_path"/profiles_websocket_temp.json "$this_path"/profiles_websocket.json
+  #
+  mv "$workers_folder/cf-redirector-websocket/src/index.js" "$workers_folder/cf-redirector-websocket/src/index_temp.js"
+  cat "$workers_folder/cf-redirector-websocket/src/index_temp.js" >> "$workers_folder/cf-redirector-websocket/src/test.js"
+  rm "$workers_folder/cf-redirector-websocket/src/index_temp.js"
+  mv "$workers_folder/cf-redirector-websocket/src/test.js" "$workers_folder/cf-redirector-websocket/src/index.js"
+}
+
+function deployWebsocketListenerSecrets() {
+  echo ""
+  if [[ $use_websocket_listeners == "false" ]]; then
+    return
+  fi
+  echo "Deploying websocket listener secrets"
+  COUNT=0
+  while [[ $COUNT -lt $websocket_listener_count ]]; do
+    temp_websocket_listener_name=$(jq -r ".listeners_websocket[$COUNT].name" "$config_file")
+    temp_websocket_listener_name_uppercase=$(echo "$temp_websocket_listener_name" | tr '[:lower:]' '[:upper:]')
+    temp_websocket_listener_useragent=$(jq -r ".listeners_websocket[$COUNT].user_agent" "$config_file")
+    temp_websocket_listener_path=$(jq -r ".listeners_websocket[$COUNT].path" "$config_file")
+    temp_websocket_listener_address=$(jq -r ".listeners_websocket[$COUNT].address" "$config_file")
+    temp_websocket_listener_inactive_timeout=$(jq -r ".listeners_websocket[$COUNT].inactive_timeout" "$config_file")
+    # setup secrets
+    for ((ROUTECOUNT=0; ROUTECOUNT<websocket_route_count; ROUTECOUNT++)); do
+      temp_websocket_route_name=$(jq -r ".websocket_route[$ROUTECOUNT].name" "$config_file")
+      echo "$temp_websocket_listener_useragent" | wrangler secret put "USER_AGENT_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
+      echo "$temp_websocket_listener_path" | wrangler secret put "LISTENER_PATH_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
+      echo "$temp_websocket_listener_address" | wrangler secret put "LISTENER_ADDRESS_WS_$temp_websocket_listener_name_uppercase" --env "$temp_websocket_route_name"
+      echo "$temp_websocket_listener_inactive_timeout" | wrangler secret put "INACTIVE_TIMEOUT_WS" --env "$temp_websocket_route_name"
+    done
+    COUNT=$((COUNT + 1))
+  done
+}
+
+function deployWebsocketWorkers() {
+  echo ""
+  if [[ $use_websocket_listeners == "false" ]]; then
+    return
+  fi
+  echo "Deploying websocket"
+  cd "$workers_folder/cf-redirector-websocket" || exit
+  COUNT=0
+  while [[ $COUNT -lt $websocket_route_count ]]; do
+    temp_websocket_route_name=$(jq -r ".websocket_route[$COUNT].name" "$config_file")
+    wrangler deploy --env "$temp_websocket_route_name"
+    sleep 1
+    COUNT=$((COUNT + 1))
+  done
+  # deploy listener secrets
+  deployWebsocketListenerSecrets
+  cd "$this_path" || exit
+}
+
 function deleteAllWorkers() {
   echo ""
   echo "Deleting workers"
@@ -276,7 +442,17 @@ function deleteAllWorkers() {
     wrangler delete --env "$temp_router_route_name" --force
     COUNT=$((COUNT + 1))
   done
-  cd "$this_path" || exit
+  if [[ $use_websocket_listeners == "true" ]]; then
+    cd "$this_path" || exit
+    cd "$workers_folder/cf-redirector-websocket" || exit
+    WS_COUNT=0
+    while [[ $WS_COUNT -lt $websocket_route_count ]]; do
+      temp_websocket_route_name=$(jq -r ".websocket_route[$WS_COUNT].name" "$config_file")
+      wrangler delete --env "$temp_websocket_route_name" --force
+      WS_COUNT=$((WS_COUNT + 1))
+    done
+    cd "$this_path" || exit
+  fi
   cd "$workers_folder/cf-redirector-auth" || exit
   wrangler delete --force
   cd "$this_path" || exit
@@ -287,11 +463,16 @@ function deleteAllWorkers() {
   git checkout -- "$workers_folder/cf-redirector-router/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-auth/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/wrangler.toml"
+  git checkout -- "$workers_folder/cf-redirector-websocket/wrangler.toml"
   git checkout -- "$workers_folder/cf-redirector-worker/src/index.js"
+  git checkout -- "$workers_folder/cf-redirector-websocket/src/index.js"
   #
   rm "$this_path/routerurls.txt"
   rm "$this_path/.first_deployment.txt"
   rm "$this_path/profiles.json"
+  if [[ $use_websocket_listeners == "true" ]]; then
+    rm "$this_path/profiles_websocket.json"
+  fi
 }
 
 function outputRouterHosts() {
@@ -304,8 +485,14 @@ function outputRouterHosts() {
   # if jq is installed
   if command -v jq &>/dev/null; then
     jq '.' "$this_path"/profiles.json
+    if [[ $use_websocket_listeners == "true" ]]; then
+      jq '.' "$this_path"/profiles_websocket.json
+    fi
   else
     cat "$this_path"/profiles.json
+    if [[ $use_websocket_listeners == "true" ]]; then
+      cat "$this_path"/profiles_websocket.json
+    fi
   fi
 }
 
@@ -325,8 +512,11 @@ function doAllSecrets() {
   secretsAuthWorker
   secretsRedirectorWorker
   secretsRouterWorker
+  secretsWebsocketWorker
   loopListeners
+  loopListenersWebsocket
   deployWorkers
+  deployWebsocketWorkers
   outputRouterHosts
 }
 
@@ -343,7 +533,9 @@ function firstDeployment() {
   installDependencies
   addBasicConfig
   loopRoute
+  loopWebsocketRoute
   deployWorkers
+  deployWebsocketWorkers
   doAllSecrets
 }
 
@@ -355,6 +547,7 @@ function parseArgs() {
     -d | --deploy)
       checkFirstDeployment
       deployWorkers
+      deployWebsocketWorkers
       shift
       ;;
     -s | --secrets)
@@ -373,7 +566,9 @@ function parseArgs() {
     -l | --listeners)
       checkFirstDeployment
       loopListeners
+      loopListenersWebsocket
       deployWorkers
+      deployWebsocketWorkers
       outputRouterHosts
       shift
       ;;

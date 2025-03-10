@@ -1,0 +1,17 @@
+{
+  "c2profile_name": "websocket",
+  "c2_instance": {
+    "tasking_type": "Poll",
+    "callback_host": "wss://websocket1.subdomain.workers.dev",
+    "callback_interval": "15",
+    "callback_jitter": "35",
+    "callback_port": "8081",
+    "AESPSK": "aes256_hmac",
+    "domain_front": "",
+    "killdate": "2026-03-10",
+    "encrypted_exchange_check": "T",
+    "USER_AGENT": "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko",
+    "ENDPOINT_REPLACE": "socket"
+  },
+  "instance_name": "Cloudflare-Redirector-Websocket"
+}
