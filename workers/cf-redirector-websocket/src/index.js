@@ -2,8 +2,7 @@
 function relay(source, destination) {
   source.addEventListener("message", (event) => {
     // Check if destination is still open before sending
-    if (destination.readyState === 1) { // 1 = OPEN
-			// console.log("relay-event-data", event.data);
+    if (destination.readyState === 1) {
       destination.send(event.data);
     }
   });
@@ -117,7 +116,7 @@ export default {
     const userAgent = request.headers.get("User-Agent");
 		const requestPath = request.url.split("/").pop();
     console.log("user-agent", userAgent);
-		console.log("request-path", requestPath);
+    console.log("request-path", requestPath);
     // Only proceed if this is a websocket upgrade request.
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Sorry, bad request", { status: 400 });
