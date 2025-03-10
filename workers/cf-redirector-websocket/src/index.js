@@ -26,8 +26,8 @@ async function handleSession(workerSocket, env, requestPath) {
   // Track connection state
   let connectionActive = true;
   let lastActivityTimestamp = Date.now();
-  const INACTIVE_TIMEOUT = 8000; // 8 seconds
-	const CHECK_INTERVAL = INACTIVE_TIMEOUT / 2; // 4 seconds
+  const INACTIVE_TIMEOUT = env.INACTIVE_TIMEOUT_WS;
+	const CHECK_INTERVAL = INACTIVE_TIMEOUT / 2;
 
   const targetUrl = setDestUrl(env, requestPath);
 
