@@ -22,7 +22,7 @@ function relay(source, destination) {
   });
 }
 
-async function handleSession(workerSocket, env, requestPath) {
+async function handleSession(workerSocket, env, requestPath, userAgent) {
   // Track connection state
   let connectionActive = true;
   let lastActivityTimestamp = Date.now();
@@ -31,7 +31,11 @@ async function handleSession(workerSocket, env, requestPath) {
 	const CHECK_INTERVAL = INACTIVE_TIMEOUT / 2;
 
   const targetUrl = setDestUrl(env, requestPath);
-  let targetUserAgent = setDestUserAgent(env, requestPath) || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
+  const targetUserAgent = setDestUserAgent(env, requestPath);
+  // verify user-agent
+  if (userAgent !== targetUserAgent) {
+    return new Response("Sorry, bad request", { status: 400 });
+  }
 
   try {
     // Prepare the request with the necessary Upgrade header.
@@ -124,10 +128,6 @@ export default {
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Sorry, bad request", { status: 400 });
     }
-    // verify user-agent
-    if (userAgent !== env.USER_AGENT_WS) {
-      return new Response("Sorry, bad request", { status: 400 });
-    }
 
     // Create a pair of WebSocket connections.
     const pair = new WebSocketPair();
@@ -137,7 +137,7 @@ export default {
     workerSocket.accept();
 
     // Asynchronously handle the session.
-    ctx.waitUntil(handleSession(workerSocket, env, requestPath));
+    ctx.waitUntil(handleSession(workerSocket, env, requestPath, userAgent));
 
     return new Response(null, {
       status: 101,
