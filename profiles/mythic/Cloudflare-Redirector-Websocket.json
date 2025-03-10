@@ -2,7 +2,7 @@
   "c2profile_name": "websocket",
   "c2_instance": {
     "tasking_type": "Poll",
-    "callback_host": "wss://websocket1.subdomain.workers.dev",
+    "callback_host": "wss://websocket1.subdomain.workers.dev/socket",
     "callback_interval": "15",
     "callback_jitter": "35",
     "callback_port": "8081",

@@ -87,7 +87,7 @@ Dont forget to set `use_websocket_listeners` to `true`.
   "c2profile_name": "websocket",
   "c2_instance": {
     "tasking_type": "Poll",
-    "callback_host": "wss://websocket1.subdomain.workers.dev",
+    "callback_host": "wss://websocket1.subdomain.workers.dev/socket",
     "callback_interval": "15",
     "callback_jitter": "35",
     "callback_port": "8081",
@@ -102,4 +102,4 @@ Dont forget to set `use_websocket_listeners` to `true`.
 }
 ```
 
-Note: even if we set `usessl` to `false` in websocket config, we need to use `wss://` in the callback_host.
+Note: even if we set `usessl` to `false` in websocket config, we need to use `wss://` in the callback_host. Also, make sure the path is correct in the callback_host (should be the same as the `ENDPOINT_REPLACE` in the websocket config).
