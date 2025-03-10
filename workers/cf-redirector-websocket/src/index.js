@@ -26,16 +26,19 @@ async function handleSession(workerSocket, env, requestPath) {
   // Track connection state
   let connectionActive = true;
   let lastActivityTimestamp = Date.now();
-  const INACTIVE_TIMEOUT = env.INACTIVE_TIMEOUT_WS;
+  let destInactiveTimeout = setDestInactiveTimeout(env, requestPath) || 20000;
+  const INACTIVE_TIMEOUT = destInactiveTimeout;
 	const CHECK_INTERVAL = INACTIVE_TIMEOUT / 2;
 
   const targetUrl = setDestUrl(env, requestPath);
+  let targetUserAgent = setDestUserAgent(env, requestPath) || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
 
   try {
     // Prepare the request with the necessary Upgrade header.
     const targetRequest = new Request(targetUrl, {
       headers: {
         Upgrade: "websocket",
+        "User-Agent": targetUserAgent,
         "CF-Access-Client-Id": env.SERVICE_CF_ID_WS,
         "CF-Access-Client-Secret": env.SERVICE_CF_SECRET_WS,
       },
@@ -115,8 +118,8 @@ export default {
   async fetch(request, env, ctx) {
     const userAgent = request.headers.get("User-Agent");
 		const requestPath = request.url.split("/").pop();
-    console.log("user-agent", userAgent);
-    console.log("request-path", requestPath);
+    // console.log("user-agent", userAgent);
+    // console.log("request-path", requestPath);
     // Only proceed if this is a websocket upgrade request.
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("Sorry, bad request", { status: 400 });
