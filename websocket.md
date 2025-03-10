@@ -90,7 +90,7 @@ Dont forget to set `use_websocket_listeners` to `true`.
     "callback_host": "wss://websocket1.subdomain.workers.dev/socket",
     "callback_interval": "15",
     "callback_jitter": "35",
-    "callback_port": "8081",
+    "callback_port": "443",
     "AESPSK": "aes256_hmac",
     "domain_front": "",
     "killdate": "2026-03-10",
