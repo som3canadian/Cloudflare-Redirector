@@ -1,0 +1,118 @@
+{
+    "name": "Microsoft Update",
+    "get": {
+        "verb": "GET",
+        "uris": [
+            "/msdownload/update/v3/static/trustedr/en/authrootstl.cab",
+            "/msdownload/update/v3/static/trustedr/en/disallowedcertstl.cab"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "Keep-Alive",
+                "Cache-Control": "no-cache",
+                "User-Agent": "Microsoft-CryptoAPI/10.0",
+                "X-ID": "5",
+                "X-Some-Header": "your_secret_value_here"
+            },
+            "parameters": null,
+            "message": {
+                "location": "query",
+                "name": "cversion"
+            },
+            "transforms": [
+                {
+                    "action": "base64url",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "application/vnd.ms-cab-compressed",
+                "Server": "Microsoft-IIS/10.0",
+                "X-Powered-By": "ASP.NET",
+                "Connection": "keep-alive",
+                "Cache-Control": "max-age=86400"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "updateKey2025"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "prepend",
+                    "value": "MSCF\u0000\u0000\u0000\u0000"
+                },
+                {
+                    "action": "append",
+                    "value": "\u0000\u0000\u0001\u0000\u0000\u0000\u0000\u0000"
+                }
+            ]
+        }
+    },
+    "post": {
+        "verb": "POST",
+        "uris": [
+            "/msdownload/update/v3/static/feedbackapi/en/feedback.aspx"
+        ],
+        "client": {
+            "headers": {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "gzip, deflate",
+                "Connection": "Keep-Alive",
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "Microsoft-CryptoAPI/10.0",
+                "X-ID": "5",
+                "X-Some-Header": "your_secret_value_here"
+            },
+            "parameters": null,
+            "message": {
+                "location": "body",
+                "name": "feedback"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "feedbackKey"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                }
+            ]
+        },
+        "server": {
+            "headers": {
+                "Content-Type": "text/html; charset=utf-8",
+                "Server": "Microsoft-IIS/10.0",
+                "X-Powered-By": "ASP.NET",
+                "Connection": "keep-alive",
+                "Cache-Control": "no-cache, no-store"
+            },
+            "transforms": [
+                {
+                    "action": "xor",
+                    "value": "responseKey"
+                },
+                {
+                    "action": "base64",
+                    "value": ""
+                },
+                {
+                    "action": "prepend",
+                    "value": "<!DOCTYPE html><html><head><title>Feedback Submitted</title></head><body><div>"
+                },
+                {
+                    "action": "append",
+                    "value": "</div><script>setTimeout(function(){window.location.href='https://www.microsoft.com';},500);</script></body></html>"
+                }
+            ]
+        }
+    }
+}

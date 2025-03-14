@@ -1,0 +1,17 @@
+{
+  "c2profile_name": "httpx",
+  "c2_instance": {
+    "raw_c2_config": "800e3da8-8f73-4819-9f92-2dfc0f21477b",
+    "callback_domains": [
+      "https://router1.example.workers.dev:443"
+    ],
+    "callback_interval": "15",
+    "callback_jitter": "23",
+    "killdate": "2026-03-12",
+    "failover_threshold": "3",
+    "domain_rotation": "fail-over",
+    "AESPSK": "aes256_hmac",
+    "encrypted_exchange_check": "true"
+  },
+  "instance_name": "cf-redirector"
+}
